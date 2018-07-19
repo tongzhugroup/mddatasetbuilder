@@ -8,7 +8,7 @@ import shutil
 from ReacNetGenerator import ReacNetGenerator
 
 class DatasetMaker(object):
-    def __init__(self,atomname=["C","H","O"],clusteratom=["C","H","O"],n_eachspecies=10,bondfilename="bonds.reaxc",dumpfilename="dump.ch4",moleculefilename=None,tempfilename=None,dataset_dir="dataset",xyzfilename="md"):
+    def __init__(self,atomname=["C","H","O"],clusteratom=["C","H","O"],bondfilename="bonds.reaxc",dumpfilename="dump.ch4",moleculefilename=None,tempfilename=None,dataset_dir="dataset",xyzfilename="md"):
         print("MDDatasetMaker")
         print("Author: Jinzhe Zeng")
         print("Email: njzjz@qq.com 10154601140@stu.ecnu.edu.cn")
@@ -18,10 +18,8 @@ class DatasetMaker(object):
         self.tempfilename=tempfilename if tempfilename else self.bondfilename+".temp2"
         self.dataset_dir=dataset_dir
         self.xyzfilename=xyzfilename
-        self.n_eachspecies=n_eachspecies
         self.atomname=np.array(atomname)
         self.clusteratom=clusteratom
-        self.dataset={}
         self.atombondtype=[]
         self.trajatom_dir="trajatom"
         self.ReacNetGenerator=ReacNetGenerator(atomname=self.atomname,runHMM=False,inputfilename=self.bondfilename,moleculefilename=self.moleculefilename,moleculetemp2filename=self.tempfilename)
