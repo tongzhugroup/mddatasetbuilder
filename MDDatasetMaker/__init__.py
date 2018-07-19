@@ -3,6 +3,7 @@
 #Email: njzjz@qq.com 10154601140@stu.ecnu.edu.cn
 import itertools
 import numpy as np
+import os
 from ReacNetGenerator import ReacNetGenerator
 
 class DatasetMaker(object):
@@ -62,6 +63,7 @@ class DatasetMaker(object):
         (step,lines),_=item
         atomtype=np.zeros((self.ReacNetGenerator.N),dtype=np.int)
         atomcrd=np.zeros((self.ReacNetGenerator.N,3))
+        boxsize=[]
         for line in lines:
             if line:
                 if line.startswith("ITEM:"):
@@ -78,19 +80,27 @@ class DatasetMaker(object):
                         s=line.split()
                         atomtype[int(s[0])-1]=int(s[1])
                         atomcrd[int(s[0])-1]=float(s[2]),float(s[3]),float(s[4])
-        return atomtype,atomcrd
+                    elif linecontent==2:
+                        s=line.split()
+                        boxsize.append(float(s[1])-float(s[0]))
+        return atomtype,atomcrd,np.array(boxsize)
 
     def writexyzfile(self):
         i=0
         self.ReacNetGenerator.inputfilename=self.dumpfilename
         steplinenum=self.ReacNetGenerator.readlammpscrdN()
+        if not os.path.exists(self.dataset_dir):
+            os.makedirs(self.dataset_dir)
         with open(self.dumpfilename) as f:
             for item in enumerate(itertools.islice(itertools.zip_longest(*[f]*steplinenum),0,None,1)):
                 if item[0] in self.dataset:
-                    atomtype,atomcrd=self.readlammpscrdstep((item,None))
+                    atomtype,atomcrd,boxsize=self.readlammpscrdstep((item,None))
                     for struc in self.dataset[item[0]]:
-                        self.ReacNetGenerator.convertxyz(atomtype[struc],atomcrd[struc],self.dataset_dir+"/"+self.xyzfilename+"_"+str(i)+".xyz")
+                        struccrd=atomcrd[struc]
+                        for j in range(1,len(struccrd)):
+                            struccrd[j]-=np.round((struccrd[j]-struccrd[0])/boxsize)*boxsize
+                        self.ReacNetGenerator.convertxyz(atomtype[struc],struccrd,self.dataset_dir+"/"+self.xyzfilename+"_"+str(i)+".xyz")
                         i+=1
 
 if __name__ == '__main__':
-    DatasetMaker(bondfilename="bonds.reaxc.ch4",dataset_dir="dataset_ch4",xyzfilename="ch4").makedataset(processtraj=False)
+    DatasetMaker(bondfilename="bonds.reaxc.ch4_new",dataset_dir="dataset_ch4",xyzfilename="ch4").makedataset(processtraj=False)
