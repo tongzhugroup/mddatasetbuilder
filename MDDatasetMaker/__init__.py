@@ -5,7 +5,9 @@ import itertools
 import numpy as np
 import os
 import shutil
+from sklearn.cluster import Birch
 from ReacNetGenerator import ReacNetGenerator
+from multiprocessing import Pool, Semaphore
 
 class DatasetMaker(object):
     def __init__(self,atomname=["C","H","O"],clusteratom=["C","H","O"],bondfilename="bonds.reaxc",dumpfilename="dump.ch4",moleculefilename=None,tempfilename=None,dataset_dir="dataset",xyzfilename="md"):
@@ -25,6 +27,11 @@ class DatasetMaker(object):
         self.ReacNetGenerator=ReacNetGenerator(atomname=self.atomname,runHMM=False,inputfilename=self.bondfilename,moleculefilename=self.moleculefilename,moleculetemp2filename=self.tempfilename)
         self.nuclearcharge={"H":1,"He":2,"Li":3,"Be":4,"B":5,"C":6,"N":7,"O":8,"F":9,"Ne":10}
 
+    def produce(self,semaphore,list,parameter):
+        for item in list:
+            semaphore.acquire()
+            yield item,parameter
+
     def makedataset(self,processtraj=True):
         if processtraj:
             self.ReacNetGenerator.inputfilename=self.bondfilename
@@ -38,6 +45,7 @@ class DatasetMaker(object):
         #self.readmoname()
         #self.sorttrajatoms()
         self.writecoulumbmatrixs()
+        #self.selectatoms("C1111")
 
     def readmoname(self):
         if os.path.exists(self.trajatom_dir):
@@ -130,25 +138,50 @@ class DatasetMaker(object):
         with open(self.trajatom_dir+"/stepatom."+trajatomfilename) as f:
             for line in f:
                 s=line.split()
-                dstep[int(s[0])]=[int(x) for x in s[1].split(",")]
-        with open(self.dumpfilename) as f,open(self.trajatom_dir+"/coulumbmatrix."+trajatomfilename,'w') as fm:
-            for item in enumerate(itertools.islice(itertools.zip_longest(*[f]*self.steplinenum),0,None,1)):
-                if item[0] in dstep:
-                    atomtype,atomcrd,boxsize=self.readlammpscrdstep((item,None))
-                    for atoma in dstep[item[0]]:
-                        cutoffatoms=[]
-                        for i in range(len(atomcrd)):
-                            dxyz=atomcrd[atoma]-atomcrd[i]
-                            dxyz=dxyz-np.round(dxyz/boxsize)*boxsize
-                            if 0<np.linalg.norm(dxyz)<=cutoff:
-                                cutoffatoms.append(i)
-                        cutoffcrds=atomcrd[cutoffatoms]
-                        for j in range(1,len(cutoffcrds)):
-                            cutoffcrds[j]-=np.round((cutoffcrds[j]-atomcrd[i])/boxsize)*boxsize
-                        print(item[0],atoma,",".join(str(x) for x in self.calcoulumbmatrix(atomtype[atoma],atomcrd[atoma],atomtype[cutoffatoms],cutoffcrds)),file=fm)
+                self.dstep[int(s[0])]=[int(x) for x in s[1].split(",")]
+        with open(self.dumpfilename) as f,open(self.trajatom_dir+"/coulumbmatrix."+trajatomfilename,'w') as fm,Pool(maxtasksperchild=100) as pool:
+            semaphore = Semaphore(360)
+            results=pool.imap_unordered(self.writestepmatrix,self.produce(semaphore,enumerate(itertools.islice(itertools.zip_longest(*[f]*self.steplinenum),0,1)),None),10):
+            for result in results:
+                for resultline in result:
+                    print(resultline,file=fm)
+
+    def writestepmatrix(self,item):
+        (step,lines),_=item
+        results=[]
+        if step in self.dstep:
+            atomtype,atomcrd,boxsize=self.readlammpscrdstep(item)
+            for atoma in self.dstep[step]:
+                cutoffatoms=[]
+                for i in range(len(atomcrd)):
+                    dxyz=atomcrd[atoma]-atomcrd[i]
+                    dxyz=dxyz-np.round(dxyz/boxsize)*boxsize
+                    if 0<np.linalg.norm(dxyz)<=cutoff:
+                        cutoffatoms.append(i)
+                cutoffcrds=atomcrd[cutoffatoms]
+                for j in range(1,len(cutoffcrds)):
+                    cutoffcrds[j]-=np.round((cutoffcrds[j]-atomcrd[i])/boxsize)*boxsize
+                results.append(" ".join([str(item[0]),str(atoma),",".join(str(x) for x in self.calcoulumbmatrix(atomtype[atoma],atomcrd[atoma],atomtype[cutoffatoms],cutoffcrds))]))
+        return results
 
     def calcoulumbmatrix(self,atomtypea,atomcrda,atomtype,atomcrd):
-        return np.sort([self.nuclearcharge[self.atomname[atomtype[i]-1]]/np.linalg.norm(atomcrd[i]-atomcrda) for i in range(len(atomcrd))])
+        return -np.sort(-np.array([self.nuclearcharge[self.atomname[atomtype[i]-1]]/np.linalg.norm(atomcrd[i]-atomcrda) for i in range(len(atomcrd))]))
+
+    def selectatoms(self,trajatomfilename):
+        coulumbmatrix=[]
+        maxsize=0
+        with open(self.trajatom_dir+"/coulumbmatrix."+trajatomfilename) as f:
+            for line in f:
+                s=line.split()
+                mline=[float(x) for x in s[2].split(",")]
+                maxsize=max(maxsize,len(mline))
+                coulumbmatrix.append(mline)
+        self.clusterdatas(np.array([mline+[0]*(maxsize-len(mline)) for mline in coulumbmatrix]))
+
+    def clusterdatas(self,X,n_clusters=10000):
+        brc=Birch(n_clusters=n_clusters)
+        labels=brc.fit_predict(X)
+        print(labels)
 
 if __name__ == '__main__':
     DatasetMaker(bondfilename="bonds.reaxc.ch4_new",dataset_dir="dataset_ch4",xyzfilename="ch4").makedataset(processtraj=False)
