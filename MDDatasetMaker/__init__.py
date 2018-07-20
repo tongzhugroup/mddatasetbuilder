@@ -10,7 +10,7 @@ from ReacNetGenerator import ReacNetGenerator
 from multiprocessing import Pool, Semaphore
 
 class DatasetMaker(object):
-    def __init__(self,atomname=["C","H","O"],clusteratom=["C","H","O"],bondfilename="bonds.reaxc",dumpfilename="dump.ch4",moleculefilename=None,tempfilename=None,dataset_dir="dataset",xyzfilename="md"):
+    def __init__(self,atomname=["C","H","O"],clusteratom=["C","H","O"],bondfilename="bonds.reaxc",dumpfilename="dump.ch4",moleculefilename=None,tempfilename=None,dataset_dir="dataset",xyzfilename="md",cutoff=3.5):
         print("MDDatasetMaker")
         print("Author: Jinzhe Zeng")
         print("Email: njzjz@qq.com 10154601140@stu.ecnu.edu.cn")
@@ -26,7 +26,7 @@ class DatasetMaker(object):
         self.trajatom_dir="trajatom"
         self.ReacNetGenerator=ReacNetGenerator(atomname=self.atomname,runHMM=False,inputfilename=self.bondfilename,moleculefilename=self.moleculefilename,moleculetemp2filename=self.tempfilename)
         self.nuclearcharge={"H":1,"He":2,"Li":3,"Be":4,"B":5,"C":6,"N":7,"O":8,"F":9,"Ne":10}
-        self.cutoff=3.5
+        self.cutoff=cutoff
 
     def produce(self,semaphore,list,parameter):
         for item in list:
@@ -161,8 +161,8 @@ class DatasetMaker(object):
                     if 0<np.linalg.norm(dxyz)<=self.cutoff:
                         cutoffatoms.append(i)
                 cutoffcrds=atomcrd[cutoffatoms]
-                for j in range(1,len(cutoffcrds)):
-                    cutoffcrds[j]-=np.round((cutoffcrds[j]-atomcrd[i])/boxsize)*boxsize
+                for j in range(len(cutoffcrds)):
+                    cutoffcrds[j]-=np.round((cutoffcrds[j]-atomcrd[atoma])/boxsize)*boxsize
                 results.append(" ".join([str(step),str(atoma),",".join(str(x) for x in self.calcoulumbmatrix(atomtype[atoma],atomcrd[atoma],atomtype[cutoffatoms],cutoffcrds))]))
         return results
 
