@@ -7,12 +7,12 @@ import os
 import gc
 import shutil
 import time
-from sklearn.cluster import Birch
+from sklearn.cluster import MiniBatchKMeans
 from ReacNetGenerator import ReacNetGenerator
 from multiprocessing import Pool, Semaphore
 
 class DatasetMaker(object):
-    def __init__(self,atomname=["C","H","O"],clusteratom=["C","H","O"],bondfilename="bonds.reaxc",dumpfilename="dump.ch4",moleculefilename=None,tempfilename=None,dataset_dir="dataset",xyzfilename="md",cutoff=3.5,stepinterval=1):
+    def __init__(self,atomname=["C","H","O"],clusteratom=["C","H","O"],bondfilename="bonds.reaxc",dumpfilename="dump.ch4",moleculefilename=None,tempfilename=None,dataset_dir="dataset",xyzfilename="md",cutoff=3.5,stepinterval=1,n_clusters=10000):
         print("MDDatasetMaker")
         print("Author: Jinzhe Zeng")
         print("Email: njzjz@qq.com 10154601140@stu.ecnu.edu.cn")
@@ -28,8 +28,10 @@ class DatasetMaker(object):
         self.trajatom_dir="trajatom"
         self.stepinterval=stepinterval
         self.ReacNetGenerator=ReacNetGenerator(atomname=self.atomname,runHMM=False,inputfilename=self.bondfilename,moleculefilename=self.moleculefilename,moleculetemp2filename=self.tempfilename,stepinterval=self.stepinterval)
+        self.convertxyz=self.ReacNetGenerator.convertxyz
         self.nuclearcharge={"H":1,"He":2,"Li":3,"Be":4,"B":5,"C":6,"N":7,"O":8,"F":9,"Ne":10}
         self.cutoff=cutoff
+        self.n_clusters=n_clusters
 
     def produce(self,semaphore,list,parameter):
         for item in list:
@@ -38,7 +40,7 @@ class DatasetMaker(object):
 
     def makedataset(self,processtraj=True):
         timearray=self.printtime([])
-        for runstep in range(5):
+        for runstep in range(6):
             if runstep==0:
                 if processtraj:
                     self.ReacNetGenerator.inputfilename=self.bondfilename
@@ -50,15 +52,15 @@ class DatasetMaker(object):
                         self.ReacNetGenerator.printmoleculename()
             elif runstep==1:
                 self.readlammpscrdN()
-                #self.readmoname()
+                self.readmoname()
             elif runstep==2:
-                pass
-                #self.sorttrajatoms()
+                self.sorttrajatoms()
             elif runstep==3:
                 self.writecoulumbmatrixs()
             elif runstep==4:
-                pass
-                #self.selectatoms("C1111")
+                self.selectallatoms()
+            elif runstep==5:
+                self.writexyzfiles()
             gc.collect()
             timearray=self.printtime(timearray)
 
@@ -122,6 +124,10 @@ class DatasetMaker(object):
     def writecoulumbmatrixs(self):
         for line in self.trajlist():
             self.writecoulumbmatrix(line.strip())
+
+    def selectallatoms(self):
+        for line in self.trajlist():
+            self.selectatoms(line.strip())
 
     def readlammpscrdstep(self,item):
         (step,lines),_=item
@@ -192,19 +198,78 @@ class DatasetMaker(object):
 
     def selectatoms(self,trajatomfilename):
         coulumbmatrix=[]
+        stepatom=[]
         maxsize=0
         with open(self.trajatom_dir+"/coulumbmatrix."+trajatomfilename) as f:
             for line in f:
                 s=line.split()
+                stepatom.append([s[x] for x in range(2)])
                 mline=[float(x) for x in s[2].split(",")]
                 maxsize=max(maxsize,len(mline))
                 coulumbmatrix.append(mline)
-        self.clusterdatas(np.array([mline+[0]*(maxsize-len(mline)) for mline in coulumbmatrix]))
+        chooseindexs=self.clusterdatas(np.array([mline+[0]*(maxsize-len(mline)) for mline in coulumbmatrix]),n_clusters=self.n_clusters) if len(coulumbmatrix)>self.n_clusters else range(len(coulumbmatrix))
+        with open(self.trajatom_dir+"/chooseatoms."+trajatomfilename,'w') as f:
+            for index in chooseindexs:
+                print(" ".join(stepatom[index]),file=f)
 
     def clusterdatas(self,X,n_clusters=10000):
-        brc=Birch(n_clusters=n_clusters)
-        labels=brc.fit_predict(X)
-        print(labels)
+        clus=MiniBatchKMeans(n_clusters=n_clusters)
+        labels=clus.fit_predict(X)
+        chooseindex={}
+        choosenum={}
+        for index,label in enumerate(labels):
+            if label in chooseindex:
+                r=np.random.randint(0,choosenum[label]+1)
+                if r==0:
+                    chooseindex[label]=index
+                choosenum[label]+=1
+            else:
+                chooseindex[label]=index
+                choosenum[label]=0
+        return chooseindex.values()
+
+    def writexyzfiles(self):
+        if not os.path.exists(self.dataset_dir):
+            os.makedirs(self.dataset_dir)
+        for line in self.trajlist():
+            self.writexyzfile(line.strip())
+
+    def writexyzfile(self,trajatomfilename):
+        self.dstep={}
+        with open(self.trajatom_dir+"/chooseatoms."+trajatomfilename) as f:
+            for line in f:
+                s=line.split()
+                if int(s[0]) in self.dstep:
+                    self.dstep[int(s[0])].append(int(s[1]))
+                else:
+                    self.dstep[int(s[0])]=[int(s[1])]
+        with open(self.dumpfilename) as f,Pool(maxtasksperchild=100) as pool:
+            semaphore = Semaphore(360)
+            i=0
+            results=pool.imap_unordered(self.writestepxyzfile,self.produce(semaphore,enumerate(itertools.islice(itertools.zip_longest(*[f]*self.steplinenum),0,None,self.stepinterval)),None),10)
+            for result in results:
+                for resultline in result:
+                    self.convertxyz(resultline[1],resultline[0],self.dataset_dir+"/"+self.xyzfilename+"_"+trajatomfilename+"_"+str(i)+".xyz")
+                    i+=1
+                semaphore.release()
+
+    def writestepxyzfile(self,item):
+        (step,lines),_=item
+        results=[]
+        if step in self.dstep:
+            atomtype,atomcrd,boxsize=self.readlammpscrdstep(item)
+            for atoma in self.dstep[step]:
+                cutoffatoms=[]
+                for i in range(len(atomcrd)):
+                    dxyz=atomcrd[atoma]-atomcrd[i]
+                    dxyz=dxyz-np.round(dxyz/boxsize)*boxsize
+                    if np.linalg.norm(dxyz)<=self.cutoff:
+                        cutoffatoms.append(i)
+                cutoffcrds=atomcrd[cutoffatoms]
+                for j in range(len(cutoffcrds)):
+                    cutoffcrds[j]-=np.round((cutoffcrds[j]-atomcrd[atoma])/boxsize)*boxsize
+                results.append([cutoffcrds,atomtype[cutoffatoms]])
+        return results
 
 if __name__ == '__main__':
     DatasetMaker(bondfilename="bonds.reaxc.ch4_new",dataset_dir="dataset_ch4",xyzfilename="ch4",stepinterval=25).makedataset(processtraj=False)
