@@ -26,6 +26,7 @@ class DatasetMaker(object):
         self.trajatom_dir="trajatom"
         self.ReacNetGenerator=ReacNetGenerator(atomname=self.atomname,runHMM=False,inputfilename=self.bondfilename,moleculefilename=self.moleculefilename,moleculetemp2filename=self.tempfilename)
         self.nuclearcharge={"H":1,"He":2,"Li":3,"Be":4,"B":5,"C":6,"N":7,"O":8,"F":9,"Ne":10}
+        self.cutoff=3.5
 
     def produce(self,semaphore,list,parameter):
         for item in list:
@@ -103,8 +104,8 @@ class DatasetMaker(object):
 
     def readlammpscrdstep(self,item):
         (step,lines),_=item
-        atomtype=np.zeros((self.ReacNetGenerator.N),dtype=np.int)
-        atomcrd=np.zeros((self.ReacNetGenerator.N,3))
+        atomtype=np.zeros((self.ReacNetGenerator.N+1),dtype=np.int)
+        atomcrd=np.zeros((self.ReacNetGenerator.N+1,3))
         boxsize=[]
         for line in lines:
             if line:
@@ -120,8 +121,8 @@ class DatasetMaker(object):
                 else:
                     if linecontent==3:
                         s=line.split()
-                        atomtype[int(s[0])-1]=int(s[1])
-                        atomcrd[int(s[0])-1]=float(s[2]),float(s[3]),float(s[4])
+                        atomtype[int(s[0])]=int(s[1])
+                        atomcrd[int(s[0])]=float(s[2]),float(s[3]),float(s[4])
                     elif linecontent==2:
                         s=line.split()
                         boxsize.append(float(s[1])-float(s[0]))
@@ -133,18 +134,19 @@ class DatasetMaker(object):
         self.N=self.ReacNetGenerator.N
         self.atomtype=self.ReacNetGenerator.atomtype
 
-    def writecoulumbmatrix(self,trajatomfilename,cutoff=3.5):
-        dstep={}
+    def writecoulumbmatrix(self,trajatomfilename):
+        self.dstep={}
         with open(self.trajatom_dir+"/stepatom."+trajatomfilename) as f:
             for line in f:
                 s=line.split()
                 self.dstep[int(s[0])]=[int(x) for x in s[1].split(",")]
         with open(self.dumpfilename) as f,open(self.trajatom_dir+"/coulumbmatrix."+trajatomfilename,'w') as fm,Pool(maxtasksperchild=100) as pool:
             semaphore = Semaphore(360)
-            results=pool.imap_unordered(self.writestepmatrix,self.produce(semaphore,enumerate(itertools.islice(itertools.zip_longest(*[f]*self.steplinenum),0,1)),None),10):
+            results=pool.imap_unordered(self.writestepmatrix,self.produce(semaphore,enumerate(itertools.islice(itertools.zip_longest(*[f]*self.steplinenum),0,None,1)),None),10)
             for result in results:
                 for resultline in result:
                     print(resultline,file=fm)
+                    semaphore.release()
 
     def writestepmatrix(self,item):
         (step,lines),_=item
@@ -156,12 +158,12 @@ class DatasetMaker(object):
                 for i in range(len(atomcrd)):
                     dxyz=atomcrd[atoma]-atomcrd[i]
                     dxyz=dxyz-np.round(dxyz/boxsize)*boxsize
-                    if 0<np.linalg.norm(dxyz)<=cutoff:
+                    if 0<np.linalg.norm(dxyz)<=self.cutoff:
                         cutoffatoms.append(i)
                 cutoffcrds=atomcrd[cutoffatoms]
                 for j in range(1,len(cutoffcrds)):
                     cutoffcrds[j]-=np.round((cutoffcrds[j]-atomcrd[i])/boxsize)*boxsize
-                results.append(" ".join([str(item[0]),str(atoma),",".join(str(x) for x in self.calcoulumbmatrix(atomtype[atoma],atomcrd[atoma],atomtype[cutoffatoms],cutoffcrds))]))
+                results.append(" ".join([str(step),str(atoma),",".join(str(x) for x in self.calcoulumbmatrix(atomtype[atoma],atomcrd[atoma],atomtype[cutoffatoms],cutoffcrds))]))
         return results
 
     def calcoulumbmatrix(self,atomtypea,atomcrda,atomtype,atomcrd):
