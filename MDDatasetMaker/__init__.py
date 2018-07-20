@@ -6,6 +6,7 @@ import numpy as np
 import os
 import gc
 import shutil
+import time
 from sklearn.cluster import Birch
 from ReacNetGenerator import ReacNetGenerator
 from multiprocessing import Pool, Semaphore
@@ -36,23 +37,36 @@ class DatasetMaker(object):
             yield item,parameter
 
     def makedataset(self,processtraj=True):
-        if processtraj:
-            self.ReacNetGenerator.inputfilename=self.bondfilename
-            self.ReacNetGenerator.step1()
+        timearray=self.printtime([])
+        for runstep in range(5):
+            if runstep==0:
+                if processtraj:
+                    self.ReacNetGenerator.inputfilename=self.bondfilename
+                    self.ReacNetGenerator.step1()
+                    self.ReacNetGenerator.step2()
+                    if self.ReacNetGenerator.SMILES:
+                        self.ReacNetGenerator.printmoleculeSMILESname()
+                    else:
+                        self.ReacNetGenerator.printmoleculename()
+            elif runstep==1:
+                self.readlammpscrdN()
+                #self.readmoname()
+            elif runstep==2:
+                pass
+                #self.sorttrajatoms()
+            elif runstep==3:
+                self.writecoulumbmatrixs()
+            elif runstep==4:
+                pass
+                #self.selectatoms("C1111")
             gc.collect()
-            self.ReacNetGenerator.step2()
-            gc.collect()
-            if self.ReacNetGenerator.SMILES:
-                self.ReacNetGenerator.printmoleculeSMILESname()
-            else:
-                self.ReacNetGenerator.printmoleculename()
-            gc.collect()
-        self.readlammpscrdN()
-        self.readmoname()
-        gc.collect()
-        self.sorttrajatoms()
-        self.writecoulumbmatrixs()
-        #self.selectatoms("C1111")
+            timearray=self.printtime(timearray)
+
+    def printtime(self,timearray):
+        timearray.append(time.time())
+        if len(timearray)>1:
+            print("Step ",len(timearray)-1," has been completed. Time consumed: ",round(timearray[-1]-timearray[-2],3),"s")
+        return timearray
 
     def readmoname(self):
         if os.path.exists(self.trajatom_dir):
@@ -153,7 +167,7 @@ class DatasetMaker(object):
             for result in results:
                 for resultline in result:
                     print(resultline,file=fm)
-                    semaphore.release()
+                semaphore.release()
 
     def writestepmatrix(self,item):
         (step,lines),_=item
@@ -193,4 +207,4 @@ class DatasetMaker(object):
         print(labels)
 
 if __name__ == '__main__':
-    DatasetMaker(bondfilename="bonds.reaxc.ch4_new",dataset_dir="dataset_ch4",xyzfilename="ch4",stepinterval=25).makedataset(processtraj=True)
+    DatasetMaker(bondfilename="bonds.reaxc.ch4_new",dataset_dir="dataset_ch4",xyzfilename="ch4",stepinterval=25).makedataset(processtraj=False)
