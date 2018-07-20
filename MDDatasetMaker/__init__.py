@@ -4,6 +4,7 @@
 import itertools
 import numpy as np
 import os
+import gc
 import shutil
 from sklearn.cluster import Birch
 from ReacNetGenerator import ReacNetGenerator
@@ -38,13 +39,17 @@ class DatasetMaker(object):
         if processtraj:
             self.ReacNetGenerator.inputfilename=self.bondfilename
             self.ReacNetGenerator.step1()
+            gc.collect()
             self.ReacNetGenerator.step2()
+            gc.collect()
             if self.ReacNetGenerator.SMILES:
                 self.ReacNetGenerator.printmoleculeSMILESname()
             else:
                 self.ReacNetGenerator.printmoleculename()
+            gc.collect()
         self.readlammpscrdN()
         self.readmoname()
+        gc.collect()
         self.sorttrajatoms()
         self.writecoulumbmatrixs()
         #self.selectatoms("C1111")
@@ -93,6 +98,7 @@ class DatasetMaker(object):
     def trajlist(self):
         with open("trajatom.list") as f:
             for line in f:
+                gc.collect()
                 yield line
 
     def sorttrajatoms(self):
@@ -187,4 +193,4 @@ class DatasetMaker(object):
         print(labels)
 
 if __name__ == '__main__':
-    DatasetMaker(bondfilename="bonds.reaxc.ch4_new",dataset_dir="dataset_ch4",xyzfilename="ch4",stepinterval=25).makedataset(processtraj=False)
+    DatasetMaker(bondfilename="bonds.reaxc.ch4_new",dataset_dir="dataset_ch4",xyzfilename="ch4",stepinterval=25).makedataset(processtraj=True)
