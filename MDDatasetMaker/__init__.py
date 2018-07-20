@@ -10,7 +10,7 @@ from ReacNetGenerator import ReacNetGenerator
 from multiprocessing import Pool, Semaphore
 
 class DatasetMaker(object):
-    def __init__(self,atomname=["C","H","O"],clusteratom=["C","H","O"],bondfilename="bonds.reaxc",dumpfilename="dump.ch4",moleculefilename=None,tempfilename=None,dataset_dir="dataset",xyzfilename="md",cutoff=3.5):
+    def __init__(self,atomname=["C","H","O"],clusteratom=["C","H","O"],bondfilename="bonds.reaxc",dumpfilename="dump.ch4",moleculefilename=None,tempfilename=None,dataset_dir="dataset",xyzfilename="md",cutoff=3.5,stepinterval=1):
         print("MDDatasetMaker")
         print("Author: Jinzhe Zeng")
         print("Email: njzjz@qq.com 10154601140@stu.ecnu.edu.cn")
@@ -24,7 +24,8 @@ class DatasetMaker(object):
         self.clusteratom=clusteratom
         self.atombondtype=[]
         self.trajatom_dir="trajatom"
-        self.ReacNetGenerator=ReacNetGenerator(atomname=self.atomname,runHMM=False,inputfilename=self.bondfilename,moleculefilename=self.moleculefilename,moleculetemp2filename=self.tempfilename)
+        self.stepinterval=stepinterval
+        self.ReacNetGenerator=ReacNetGenerator(atomname=self.atomname,runHMM=False,inputfilename=self.bondfilename,moleculefilename=self.moleculefilename,moleculetemp2filename=self.tempfilename,stepinterval=self.stepinterval)
         self.nuclearcharge={"H":1,"He":2,"Li":3,"Be":4,"B":5,"C":6,"N":7,"O":8,"F":9,"Ne":10}
         self.cutoff=cutoff
 
@@ -43,8 +44,8 @@ class DatasetMaker(object):
             else:
                 self.ReacNetGenerator.printmoleculename()
         self.readlammpscrdN()
-        #self.readmoname()
-        #self.sorttrajatoms()
+        self.readmoname()
+        self.sorttrajatoms()
         self.writecoulumbmatrixs()
         #self.selectatoms("C1111")
 
@@ -142,7 +143,7 @@ class DatasetMaker(object):
                 self.dstep[int(s[0])]=[int(x) for x in s[1].split(",")]
         with open(self.dumpfilename) as f,open(self.trajatom_dir+"/coulumbmatrix."+trajatomfilename,'w') as fm,Pool(maxtasksperchild=100) as pool:
             semaphore = Semaphore(360)
-            results=pool.imap_unordered(self.writestepmatrix,self.produce(semaphore,enumerate(itertools.islice(itertools.zip_longest(*[f]*self.steplinenum),0,None,1)),None),10)
+            results=pool.imap_unordered(self.writestepmatrix,self.produce(semaphore,enumerate(itertools.islice(itertools.zip_longest(*[f]*self.steplinenum),0,None,self.stepinterval)),None),10)
             for result in results:
                 for resultline in result:
                     print(resultline,file=fm)
@@ -158,16 +159,16 @@ class DatasetMaker(object):
                 for i in range(len(atomcrd)):
                     dxyz=atomcrd[atoma]-atomcrd[i]
                     dxyz=dxyz-np.round(dxyz/boxsize)*boxsize
-                    if 0<np.linalg.norm(dxyz)<=self.cutoff:
+                    if np.linalg.norm(dxyz)<=self.cutoff:
                         cutoffatoms.append(i)
                 cutoffcrds=atomcrd[cutoffatoms]
                 for j in range(len(cutoffcrds)):
                     cutoffcrds[j]-=np.round((cutoffcrds[j]-atomcrd[atoma])/boxsize)*boxsize
-                results.append(" ".join([str(step),str(atoma),",".join(str(x) for x in self.calcoulumbmatrix(atomtype[atoma],atomcrd[atoma],atomtype[cutoffatoms],cutoffcrds))]))
+                results.append(" ".join([str(step),str(atoma),",".join(str(x) for x in self.calcoulumbmatrix(atomtype[cutoffatoms],cutoffcrds))]))
         return results
 
-    def calcoulumbmatrix(self,atomtypea,atomcrda,atomtype,atomcrd):
-        return -np.sort(-np.array([self.nuclearcharge[self.atomname[atomtype[i]-1]]/np.linalg.norm(atomcrd[i]-atomcrda) for i in range(len(atomcrd))]))
+    def calcoulumbmatrix(self,atomtype,atomcrd):
+        return -np.sort(-np.linalg.eig([[self.nuclearcharge[self.atomname[atomtype[i]-1]]**2.4/2 if i==j else self.nuclearcharge[self.atomname[atomtype[i]-1]]*self.nuclearcharge[self.atomname[atomtype[j]-1]]/np.linalg.norm(atomcrd[i]-atomcrd[j]) for j in range(len(atomcrd))] for i in range(len(atomcrd))])[0])
 
     def selectatoms(self,trajatomfilename):
         coulumbmatrix=[]
@@ -186,4 +187,4 @@ class DatasetMaker(object):
         print(labels)
 
 if __name__ == '__main__':
-    DatasetMaker(bondfilename="bonds.reaxc.ch4_new",dataset_dir="dataset_ch4",xyzfilename="ch4").makedataset(processtraj=False)
+    DatasetMaker(bondfilename="bonds.reaxc.ch4_new",dataset_dir="dataset_ch4",xyzfilename="ch4",stepinterval=25).makedataset(processtraj=False)
