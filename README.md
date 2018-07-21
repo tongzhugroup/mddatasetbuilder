@@ -1,6 +1,7 @@
 # MDDatasetMaker
+[![python3.6](https://img.shields.io/badge/python-3.6-blue.svg)](https://badge.fury.io/py/MDDatasetMaker)[![pypi](https://badge.fury.io/py/MDDatasetMaker.svg)](https://badge.fury.io/py/MDDatasetMaker)
 
-A script to make molecular dynamics (MD) datasets for neural networks from given LAMMPS trajectories automatically.
+MDDatasetMaker is a script to make molecular dynamics (MD) datasets for neural networks from given LAMMPS trajectories automatically, based on [ReacNetGenerator](https://github.com/njzjz/ReacNetGenerator).
 
 Author: Jinzhe Zeng
 
@@ -11,12 +12,10 @@ Email: njzjz@qq.com  10154601140@stu.ecnu.edu.cn
 ## Installation
 
 ### With pip
-If you install MDDatasetMaker with pip, you must install [RDKit](https://github.com/rdkit/rdkit) by yourself.
 ```sh
 $ pip install MDDatasetMaker
 ```
 ### Build from source
-If you build MDDatasetMaker from source, you must install [RDKit](https://github.com/rdkit/rdkit) by yourself.
 ```sh
 $ git clone https://github.com/njzjz/MDDatasetMaker.git
 $ cd MDDatasetMaker/
