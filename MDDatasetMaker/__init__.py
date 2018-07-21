@@ -58,7 +58,7 @@ class DatasetMaker(object):
             elif runstep==3:
                 self.processatomtypelist(self.writecoulumbmatrix)
             elif runstep==4:
-                self.processatomtypelist(self.selectallatom)
+                self.processatomtypelist(self.selectatoms)
             elif runstep==5:
                 self.mkdir(self.dataset_dir)
                 if self.writegjf:
