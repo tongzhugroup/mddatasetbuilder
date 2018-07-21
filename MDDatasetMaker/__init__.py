@@ -12,7 +12,7 @@ from ReacNetGenerator import ReacNetGenerator
 from multiprocessing import Pool, Semaphore
 
 class DatasetMaker(object):
-    def __init__(self,atomname=["C","H","O"],clusteratom=["C","H","O"],bondfilename="bonds.reaxc",dumpfilename="dump.ch4",moleculefilename=None,tempfilename=None,dataset_dir="dataset",xyzfilename="md",cutoff=3.5,stepinterval=1,n_clusters=10000):
+    def __init__(self,atomname=["C","H","O"],clusteratom=["C","H","O"],bondfilename="bonds.reaxc",dumpfilename="dump.ch4",moleculefilename=None,tempfilename=None,dataset_dir="dataset",xyzfilename="md",cutoff=5,stepinterval=1,n_clusters=10000):
         print("MDDatasetMaker")
         print("Author: Jinzhe Zeng")
         print("Email: njzjz@qq.com 10154601140@stu.ecnu.edu.cn")
@@ -43,13 +43,9 @@ class DatasetMaker(object):
         for runstep in range(6):
             if runstep==0:
                 if processtraj:
+                    print("Run ReacNetGenerator......")
                     self.ReacNetGenerator.inputfilename=self.bondfilename
-                    self.ReacNetGenerator.step1()
-                    self.ReacNetGenerator.step2()
-                    if self.ReacNetGenerator.SMILES:
-                        self.ReacNetGenerator.printmoleculeSMILESname()
-                    else:
-                        self.ReacNetGenerator.printmoleculename()
+                    self.ReacNetGenerator.run()
             elif runstep==1:
                 self.readlammpscrdN()
                 self.readmoname()
@@ -115,19 +111,19 @@ class DatasetMaker(object):
         with open("trajatom.list") as f:
             for line in f:
                 gc.collect()
-                yield line
+                yield line.strip()
 
     def sorttrajatoms(self):
         for line in self.trajlist():
-            self.sorttrajatom(line.strip())
+            self.sorttrajatom(line)
 
     def writecoulumbmatrixs(self):
         for line in self.trajlist():
-            self.writecoulumbmatrix(line.strip())
+            self.writecoulumbmatrix(line)
 
     def selectallatoms(self):
         for line in self.trajlist():
-            self.selectatoms(line.strip())
+            self.selectatoms(line)
 
     def readlammpscrdstep(self,item):
         (step,lines),_=item
@@ -156,6 +152,8 @@ class DatasetMaker(object):
         return atomtype,atomcrd,np.array(boxsize)
 
     def readlammpscrdN(self):
+        self.ReacNetGenerator.inputfilename=self.bondfilename
+        self.bondsteplinenum=self.ReacNetGenerator.readlammpsbondN()
         self.ReacNetGenerator.inputfilename=self.dumpfilename
         self.steplinenum=self.ReacNetGenerator.readlammpscrdN()
         self.N=self.ReacNetGenerator.N
@@ -243,10 +241,10 @@ class DatasetMaker(object):
                     self.dstep[int(s[0])].append(int(s[1]))
                 else:
                     self.dstep[int(s[0])]=[int(s[1])]
-        with open(self.dumpfilename) as f,Pool(maxtasksperchild=100) as pool:
+        with open(self.dumpfilename) as f,open(self.bondfilename) as fb,Pool(maxtasksperchild=100) as pool:
             semaphore = Semaphore(360)
             i=0
-            results=pool.imap_unordered(self.writestepxyzfile,self.produce(semaphore,enumerate(itertools.islice(itertools.zip_longest(*[f]*self.steplinenum),0,None,self.stepinterval)),None),10)
+            results=pool.imap_unordered(self.writestepxyzfile,self.produce(semaphore,enumerate(zip(itertools.islice(itertools.zip_longest(*[f]*self.steplinenum),0,None,self.stepinterval),itertools.islice(itertools.zip_longest(*[fb]*self.bondsteplinenum),0,None,self.stepinterval))),None),10)
             for result in results:
                 for resultline in result:
                     self.convertxyz(resultline[1],resultline[0],self.dataset_dir+"/"+self.xyzfilename+"_"+trajatomfilename+"_"+str(i)+".xyz")
@@ -254,10 +252,11 @@ class DatasetMaker(object):
                 semaphore.release()
 
     def writestepxyzfile(self,item):
-        (step,lines),_=item
+        (step,(dumplines,bondlines)),_=item
         results=[]
         if step in self.dstep:
-            atomtype,atomcrd,boxsize=self.readlammpscrdstep(item)
+            atomtype,atomcrd,boxsize=self.readlammpscrdstep(((step,dumplines),None))
+            molecules=self.ReacNetGenerator.readlammpsbondstep(((step,bondlines),None))[0].keys()
             for atoma in self.dstep[step]:
                 cutoffatoms=[]
                 for i in range(len(atomcrd)):
@@ -265,6 +264,12 @@ class DatasetMaker(object):
                     dxyz=dxyz-np.round(dxyz/boxsize)*boxsize
                     if np.linalg.norm(dxyz)<=self.cutoff:
                         cutoffatoms.append(i)
+                #make cutoff atoms in molecules
+                for mo in molecules:
+                    for moatom in mo[0]:
+                        if moatom in cutoffatoms:
+                            cutoffatoms=list(set(cutoffatoms)|set(mo[0]))
+                            break
                 cutoffcrds=atomcrd[cutoffatoms]
                 for j in range(len(cutoffcrds)):
                     cutoffcrds[j]-=np.round((cutoffcrds[j]-atomcrd[atoma])/boxsize)*boxsize
