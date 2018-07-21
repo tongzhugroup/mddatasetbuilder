@@ -12,7 +12,7 @@ from ReacNetGenerator import ReacNetGenerator
 from multiprocessing import Pool, Semaphore
 
 class DatasetMaker(object):
-    def __init__(self,atomname=["C","H","O"],clusteratom=["C","H","O"],bondfilename="bonds.reaxc",dumpfilename="dump.ch4",moleculefilename=None,tempfilename=None,dataset_dir="dataset",xyzfilename="md",cutoff=5,stepinterval=1,n_clusters=10000):
+    def __init__(self,atomname=["C","H","O"],clusteratom=["C","H","O"],bondfilename="bonds.reaxc",dumpfilename="dump.ch4",moleculefilename=None,tempfilename=None,dataset_dir="dataset",xyzfilename="md",cutoff=5,stepinterval=1,n_clusters=10000,qmkeywords="%nproc=4\n#force mn15/6-31g(d,p)"):
         print("MDDatasetMaker")
         print("Author: Jinzhe Zeng")
         print("Email: njzjz@qq.com 10154601140@stu.ecnu.edu.cn")
@@ -32,13 +32,17 @@ class DatasetMaker(object):
         self.nuclearcharge={"H":1,"He":2,"Li":3,"Be":4,"B":5,"C":6,"N":7,"O":8,"F":9,"Ne":10}
         self.cutoff=cutoff
         self.n_clusters=n_clusters
+        self.writegjf=True
+        self.gjfdir=self.dataset_dir+"_gjf"
+        self.qmkeywords=qmkeywords
 
     def produce(self,semaphore,list,parameter):
         for item in list:
             semaphore.acquire()
             yield item,parameter
 
-    def makedataset(self,processtraj=True):
+    def makedataset(self,processtraj=True,writegjf=True):
+        self.writegjf=writegjf
         timearray=self.printtime([])
         for runstep in range(6):
             if runstep==0:
@@ -50,13 +54,16 @@ class DatasetMaker(object):
                 self.readlammpscrdN()
                 self.readmoname()
             elif runstep==2:
-                self.sorttrajatoms()
+                self.processatomtypelist(self.sorttrajatom)
             elif runstep==3:
-                self.writecoulumbmatrixs()
+                self.processatomtypelist(self.writecoulumbmatrix)
             elif runstep==4:
-                self.selectallatoms()
+                self.processatomtypelist(self.selectallatom)
             elif runstep==5:
-                self.writexyzfiles()
+                self.mkdir(self.dataset_dir)
+                if self.writegjf:
+                    self.mkdir(self.gjfdir)
+                self.processatomtypelist(self.writexyzfile)
             gc.collect()
             timearray=self.printtime(timearray)
 
@@ -67,9 +74,7 @@ class DatasetMaker(object):
         return timearray
 
     def readmoname(self):
-        if os.path.exists(self.trajatom_dir):
-            shutil.rmtree(self.trajatom_dir)
-        os.makedirs(self.trajatom_dir)
+        self.mkdir(self.trajatom_dir)
         with open(self.moleculefilename) as fm,open(self.tempfilename) as ft:
             for linem,linet in zip(fm,ft):
                 sm=linem.split()
@@ -84,10 +89,11 @@ class DatasetMaker(object):
                             if bond[0]==atom or bond[1]==atom:
                                 atombond.append(bond[2])
                         atombondstr="".join(str(x) for x in sorted(atombond))
-                        if not self.atomname[self.atomtype[atom]-1]+atombondstr in self.atombondtype:
-                            self.atombondtype.append(self.atomname[self.atomtype[atom]-1]+atombondstr)
-                        with open(self.trajatom_dir+"/trajatom."+self.atomname[self.atomtype[atom]-1]+atombondstr,"a") as f:
+                        bondtype=self.atomname[self.atomtype[atom]-1]+atombondstr
+                        with open(self.trajatom_dir+"/trajatom."+self.atomname[self.atomtype[atom]-1]+atombondstr,'a' if bondtype in self.atombondtype else 'w') as f:
                             print(atom,st[-1],file=f)
+                        if not bondtype in self.atombondtype:
+                            self.atombondtype.append(bondtype)
         with open("trajatom.list","w") as f:
             for atombondstr in  self.atombondtype:
                 print(atombondstr,file=f)
@@ -113,17 +119,9 @@ class DatasetMaker(object):
                 gc.collect()
                 yield line.strip()
 
-    def sorttrajatoms(self):
+    def processatomtypelist(self,func):
         for line in self.trajlist():
-            self.sorttrajatom(line)
-
-    def writecoulumbmatrixs(self):
-        for line in self.trajlist():
-            self.writecoulumbmatrix(line)
-
-    def selectallatoms(self):
-        for line in self.trajlist():
-            self.selectatoms(line)
+            func(line)
 
     def readlammpscrdstep(self,item):
         (step,lines),_=item
@@ -226,11 +224,9 @@ class DatasetMaker(object):
                 choosenum[label]=0
         return chooseindex.values()
 
-    def writexyzfiles(self):
-        if not os.path.exists(self.dataset_dir):
-            os.makedirs(self.dataset_dir)
-        for line in self.trajlist():
-            self.writexyzfile(line.strip())
+    def mkdir(self,path):
+        if not os.path.exists(path):
+            os.makedirs(path)
 
     def writexyzfile(self,trajatomfilename):
         self.dstep={}
@@ -248,8 +244,23 @@ class DatasetMaker(object):
             for result in results:
                 for resultline in result:
                     self.convertxyz(resultline[1],resultline[0],self.dataset_dir+"/"+self.xyzfilename+"_"+trajatomfilename+"_"+str(i)+".xyz")
+                    if self.writegjf:
+                        self.convertgjf(resultline[1],resultline[0],resultline[2],self.gjfdir+"/"+self.xyzfilename+"_"+trajatomfilename+"_"+str(i)+".gjf")
                     i+=1
                 semaphore.release()
+
+    def convertgjf(self,types,crds,oxygennum,gjffilename):
+        with open(gjffilename,'w') as f:
+            print(self.qmkeywords,file=f)
+            print("",file=f)
+            print(gjffilename,"oxygennum=",oxygennum,"by MDDatasetMaker",file=f)
+            print("",file=f)
+            #only support CHO
+            S=[self.atomname[x-1] for x in types].count("H")%2+1+oxygennum*2
+            print("0",S,file=f)
+            for atomcrd,atomtype in zip(crds,types):
+                print(self.atomname[atomtype-1]," ".join(str(x) for x in atomcrd),file=f)
+            print("",file=f)
 
     def writestepxyzfile(self,item):
         (step,(dumplines,bondlines)),_=item
@@ -265,15 +276,19 @@ class DatasetMaker(object):
                     if np.linalg.norm(dxyz)<=self.cutoff:
                         cutoffatoms.append(i)
                 #make cutoff atoms in molecules
+                oxygennum=0
                 for mo in molecules:
                     for moatom in mo[0]:
                         if moatom in cutoffatoms:
                             cutoffatoms=list(set(cutoffatoms)|set(mo[0]))
+                            if len(mo[0])==2:
+                                if np.array([self.atomname[atomtype[mo[0][x]]-1]=="O" for x in range(len(mo[0]))]).all()==True:
+                                    oxygennum+=int(len(mo[0])/2)
                             break
                 cutoffcrds=atomcrd[cutoffatoms]
                 for j in range(len(cutoffcrds)):
                     cutoffcrds[j]-=np.round((cutoffcrds[j]-atomcrd[atoma])/boxsize)*boxsize
-                results.append([cutoffcrds,atomtype[cutoffatoms]])
+                results.append([cutoffcrds,atomtype[cutoffatoms],oxygennum])
         return results
 
 if __name__ == '__main__':
