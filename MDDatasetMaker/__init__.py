@@ -178,7 +178,7 @@ class DatasetMaker(object):
             atomtype,atomcrd,boxsize=self.readlammpscrdstep(item)
             for atoma in self.dstep[step]:
                 cutoffatoms=[]
-                for i in range(len(atomcrd)):
+                for i in range(1,self.N+1):
                     dxyz=atomcrd[atoma]-atomcrd[i]
                     dxyz=dxyz-np.round(dxyz/boxsize)*boxsize
                     if np.linalg.norm(dxyz)<=self.cutoff:
@@ -270,7 +270,7 @@ class DatasetMaker(object):
             molecules=self.ReacNetGenerator.readlammpsbondstep(((step,bondlines),None))[0].keys()
             for atoma in self.dstep[step]:
                 cutoffatoms=[]
-                for i in range(len(atomcrd)):
+                for i in range(1,N+1):
                     dxyz=atomcrd[atoma]-atomcrd[i]
                     dxyz=dxyz-np.round(dxyz/boxsize)*boxsize
                     if np.linalg.norm(dxyz)<=self.cutoff:
