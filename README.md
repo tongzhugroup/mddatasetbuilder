@@ -9,6 +9,11 @@ Email: njzjz@qq.com  10154601140@stu.ecnu.edu.cn
 
 [Research Group](http://computchem.cn)
 
+## Requirements
+* [numpy](https://github.com/numpy/numpy)
+* [scikit-learn](https://github.com/scikit-learn/scikit-learn)
+* [ReacNetGenerator](https://github.com/njzjz/ReacNetGenerator)
+
 ## Installation
 
 ### With pip
@@ -30,3 +35,4 @@ A [LAMMPS bond file](http://lammps.sandia.gov/doc/fix_reax_bonds.html) and a [LA
 >>> from MDDatasetMaker import DatasetMaker
 >>> DatasetMaker(bondfilename='bonds.reaxc.ch4_new',dumpfilename='dump.ch4',dataset_dir='dataset_ch4',xyzfilename='ch4',stepinterval=25).makedataset()
 ```
+Then you can calculate generated Gaussian files by [GaussianRunner](https://github.com/njzjz/GaussianRunner).
