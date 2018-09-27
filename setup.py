@@ -5,7 +5,7 @@ setup(name='MDDatasetMaker',
       keywords="molecular dynamics dataset",
       url='https://github.com/njzjz/MDDatasetMaker',
       author='Jinzhe Zeng',
-      author_email='jzzeng@qq.com',
+      author_email='jzzeng@stu.ecnu.edu.cn',
       packages=['MDDatasetMaker'],
       install_requires=['numpy','scikit-learn','ReacNetGenerator'])
 
