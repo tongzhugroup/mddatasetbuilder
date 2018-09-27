@@ -15,7 +15,7 @@ class DatasetMaker(object):
     def __init__(self,atomname=["C","H","O"],clusteratom=["C","H","O"],bondfilename="bonds.reaxc",dumpfilename="dump.ch4",moleculefilename=None,tempfilename=None,dataset_dir="dataset",xyzfilename="md",cutoff=5,stepinterval=1,n_clusters=10000,qmkeywords="%nproc=4\n#force mn15/6-31g(d,p)"):
         print("MDDatasetMaker")
         print("Author: Jinzhe Zeng")
-        print("Email: njzjz@qq.com 10154601140@stu.ecnu.edu.cn")
+        print("Email: jzzeng@stu.ecnu.edu.cn")
         self.dumpfilename=dumpfilename
         self.bondfilename=bondfilename
         self.moleculefilename=moleculefilename if moleculefilename else self.bondfilename+".moname"
