@@ -1,6 +1,6 @@
 #MDDatasetMaker
 #Author: Jinzhe Zeng
-#Email: njzjz@qq.com 10154601140@stu.ecnu.edu.cn
+#Email: jzzeng@stu.ecnu.edu.cn
 import itertools
 import numpy as np
 import os
@@ -9,13 +9,13 @@ import shutil
 import time
 from sklearn.cluster import MiniBatchKMeans
 from ReacNetGenerator import ReacNetGenerator
-from multiprocessing import Pool, Semaphore
+from multiprocessing import Pool, Semaphore, cpu_count
 
 class DatasetMaker(object):
-    def __init__(self,atomname=["C","H","O"],clusteratom=["C","H","O"],bondfilename="bonds.reaxc",dumpfilename="dump.ch4",moleculefilename=None,tempfilename=None,dataset_dir="dataset",xyzfilename="md",cutoff=5,stepinterval=1,n_clusters=10000,qmkeywords="%nproc=4\n#force mn15/6-31g(d,p)"):
-        print("MDDatasetMaker")
-        print("Author: Jinzhe Zeng")
-        print("Email: jzzeng@stu.ecnu.edu.cn")
+    def __init__(self,atomname=["C","H","O"],clusteratom=["C","H","O"],bondfilename="bonds.reaxc",dumpfilename="dump.ch4",moleculefilename=None,tempfilename=None,dataset_dir="dataset",xyzfilename="md",cutoff=5,stepinterval=1,n_clusters=10000,qmkeywords="%nproc=4\n#force mn15/6-31g(d,p)",nproc=None):
+        self.logging("MDDatasetMaker")
+        self.logging("Author: Jinzhe Zeng")
+        self.logging("Email: jzzeng@stu.ecnu.edu.cn")
         self.dumpfilename=dumpfilename
         self.bondfilename=bondfilename
         self.moleculefilename=moleculefilename if moleculefilename else self.bondfilename+".moname"
@@ -35,6 +35,11 @@ class DatasetMaker(object):
         self.writegjf=True
         self.gjfdir=self.dataset_dir+"_gjf"
         self.qmkeywords=qmkeywords
+        self.nproc=nproc if nproc else cpu_count()
+
+    def logging(self,*message):
+        localtime = time.asctime( time.localtime(time.time()) )
+        print(localtime,'MDDatasetMaker',*message)
 
     def produce(self,semaphore,list,parameter):
         for item in list:
@@ -47,7 +52,7 @@ class DatasetMaker(object):
         for runstep in range(6):
             if runstep==0:
                 if processtraj:
-                    print("Run ReacNetGenerator......")
+                    self.logging("Run ReacNetGenerator......")
                     self.ReacNetGenerator.inputfilename=self.bondfilename
                     self.ReacNetGenerator.run()
             elif runstep==1:
@@ -70,7 +75,7 @@ class DatasetMaker(object):
     def printtime(self,timearray):
         timearray.append(time.time())
         if len(timearray)>1:
-            print("Step ",len(timearray)-1," has been completed. Time consumed: ",round(timearray[-1]-timearray[-2],3),"s")
+            self.logging("Step ",len(timearray)-1," has been completed. Time consumed: ",round(timearray[-1]-timearray[-2],3),"s")
         return timearray
 
     def readmoname(self):
@@ -163,7 +168,7 @@ class DatasetMaker(object):
             for line in f:
                 s=line.split()
                 self.dstep[int(s[0])]=[int(x) for x in s[1].split(",")]
-        with open(self.dumpfilename) as f,open(self.trajatom_dir+"/coulumbmatrix."+trajatomfilename,'w') as fm,Pool(maxtasksperchild=100) as pool:
+        with open(self.dumpfilename) as f,open(self.trajatom_dir+"/coulumbmatrix."+trajatomfilename,'w') as fm,Pool(self.nproc,maxtasksperchild=100) as pool:
             semaphore = Semaphore(360)
             results=pool.imap_unordered(self.writestepmatrix,self.produce(semaphore,enumerate(itertools.islice(itertools.zip_longest(*[f]*self.steplinenum),0,None,self.stepinterval)),None),10)
             for result in results:
@@ -237,7 +242,7 @@ class DatasetMaker(object):
                     self.dstep[int(s[0])].append(int(s[1]))
                 else:
                     self.dstep[int(s[0])]=[int(s[1])]
-        with open(self.dumpfilename) as f,open(self.bondfilename) as fb,Pool(maxtasksperchild=100) as pool:
+        with open(self.dumpfilename) as f,open(self.bondfilename) as fb,Pool(self.nproc,maxtasksperchild=100) as pool:
             semaphore = Semaphore(360)
             i=0
             results=pool.imap_unordered(self.writestepxyzfile,self.produce(semaphore,enumerate(zip(itertools.islice(itertools.zip_longest(*[f]*self.steplinenum),0,None,self.stepinterval),itertools.islice(itertools.zip_longest(*[fb]*self.bondsteplinenum),0,None,self.stepinterval))),None),10)
