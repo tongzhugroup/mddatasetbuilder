@@ -12,6 +12,7 @@ Email: jzzeng@stu.ecnu.edu.cn
 ## Requirements
 * [numpy](https://github.com/numpy/numpy)
 * [scikit-learn](https://github.com/scikit-learn/scikit-learn)
+* [ASE](https://gitlab.com/ase/ase)
 * [ReacNetGenerator](https://github.com/njzjz/ReacNetGenerator)
 
 ## Installation
