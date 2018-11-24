@@ -189,7 +189,7 @@ class DatasetMaker(object):
                 distances=step_atoms.get_distances(atoma-1,np.arange(len(step_atoms)),mic=True)
                 cutoffatomid=[i for i in np.arange(len(step_atoms)) if distances[i]<self.cutoff]
                 cutoffatoms=step_atoms[cutoffatomid]
-                results.append((str(step),str(atoma),",".join(str(x) for x in self.calcoulumbmatrix(cutoffatoms),",".join(cutoffatoms.get_chemical_symbols()))))
+                results.append((str(step),str(atoma),",".join(str(x) for x in self.calcoulumbmatrix(cutoffatoms)),",".join(cutoffatoms.get_chemical_symbols())))
         return results
 
     def calcoulumbmatrix(self,atoms):
@@ -203,35 +203,38 @@ class DatasetMaker(object):
             for line in f:
                 s=line.split()
                 stepatom.append([s[x] for x in range(2)])
-                mline=[float(x) for x in s[2].split(",")]
+                mline=np.array([float(x) for x in s[2].split(",")])
                 symbols=s[3].split(",")
                 max_counter|=Counter(symbols)
-                coulumbmatrix.append(mline,symbols)
+                coulumbmatrix.append((mline,symbols))
         self.logging("Max counter of",trajatomfilename,"is",max_counter)
-        chooseindexs=self.clusterdatas([sum([-np.sort(-np.array([mline[[idx for idx,s in enumerate(symbols) if s==symbol]]+[atomic_numbers[symbol]**2.4/2]*(max_counter[symbol]-symbols.count(symbol)])])) for symbol in max_counter],[]) for mline,symbols in coulumbmatrix],n_clusters=self.n_clusters) if len(coulumbmatrix)>self.n_clusters else range(len(coulumbmatrix))
+        choosedindexs,choosedvalues=self.clusterdatas(np.array([np.concatenate([-np.sort(-np.concatenate((mline[[idx for idx,s in enumerate(symbols) if s==symbol]],[atomic_numbers[symbol]**2.4/2]*(max_counter[symbol]-symbols.count(symbol))))) for symbol in max_counter]) for mline,symbols in coulumbmatrix]),n_clusters=self.n_clusters,undersampling=(True if len(coulumbmatrix)>self.n_clusters else False))
         with open(os.path.join(self.trajatom_dir,"chooseatoms."+trajatomfilename),'w') as f,open(os.path.join(self.trajatom_dir,"vector."+trajatomfilename),'w') as fv:
-            for index,value in chooseindexs:
+            for index,value in zip(choosedindexs,choosedvalues):
                 print(*stepatom[index],file=f)
                 print(*value,file=fv)
 
-
-    def clusterdatas(self,X,n_clusters=10000):
+    def clusterdatas(self,X,n_clusters,undersampling):
         min_max_scaler = preprocessing.MinMaxScaler()
-        X = min_max_scaler.fit_transform(X)
-        clus=MiniBatchKMeans(n_clusters=n_clusters)
-        labels=clus.fit_predict(X)
-        chooseindex={}
-        choosenum={}
-        for index,label in enumerate(labels):
-            if label in chooseindex:
-                r=np.random.randint(0,choosenum[label]+1)
-                if r==0:
+        X=np.array(min_max_scaler.fit_transform(X))
+        if undersampling:
+            clus=MiniBatchKMeans(n_clusters=n_clusters,init_size=(3*n_clusters if 3*n_clusters>len(X) else len(X)))
+            labels=clus.fit_predict(X)
+            chooseindex={}
+            choosenum={}
+            for index,label in enumerate(labels):
+                if label in chooseindex:
+                    r=np.random.randint(0,choosenum[label]+1)
+                    if r==0:
+                        chooseindex[label]=index
+                    choosenum[label]+=1
+                else:
                     chooseindex[label]=index
-                choosenum[label]+=1
-            else:
-                chooseindex[label]=index
-                choosenum[label]=0
-        return chooseindex.values(),X[chooseindex.values()]
+                    choosenum[label]=0
+            index=np.array(list(chooseindex.values()))
+        else:
+            index=np.arange(len(X))
+        return index,X[index]
 
     def mkdir(self,path):
         if not os.path.exists(path):
