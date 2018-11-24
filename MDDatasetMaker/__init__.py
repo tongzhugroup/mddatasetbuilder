@@ -8,10 +8,13 @@ import gc
 import shutil
 import time
 from sklearn.cluster import MiniBatchKMeans
+from sklearn import preprocessing
 from ReacNetGenerator import ReacNetGenerator
 from multiprocessing import Pool, Semaphore, cpu_count
 from ase import Atoms, Atom
 from ase.io import write as write_xyz
+from ase.data import atomic_numbers
+from collections import Counter
 
 class DatasetMaker(object):
     def __init__(self,atomname=["C","H","O"],clusteratom=["C","H","O"],bondfilename="bonds.reaxc",dumpfilename="dump.ch4",moleculefilename=None,tempfilename=None,dataset_dir="dataset",xyzfilename="md",cutoff=5,stepinterval=1,n_clusters=10000,qmkeywords="%nproc=4\n#force mn15/6-31g(d,p)",nproc=None,pbc=True):
@@ -31,7 +34,6 @@ class DatasetMaker(object):
         self.stepinterval=stepinterval
         self.nproc=nproc if nproc else cpu_count()
         self.ReacNetGenerator=ReacNetGenerator(atomname=self.atomname,runHMM=False,inputfilename=self.bondfilename,moleculefilename=self.moleculefilename,moleculetemp2filename=self.tempfilename,stepinterval=self.stepinterval,nproc=self.nproc)
-        #self.nuclearcharge={"H":1,"He":2,"Li":3,"Be":4,"B":5,"C":6,"N":7,"O":8,"F":9,"Ne":10}
         self.cutoff=cutoff
         self.n_clusters=n_clusters
         self.writegjf=True
@@ -187,7 +189,7 @@ class DatasetMaker(object):
                 distances=step_atoms.get_distances(atoma-1,np.arange(len(step_atoms)),mic=True)
                 cutoffatomid=[i for i in np.arange(len(step_atoms)) if distances[i]<self.cutoff]
                 cutoffatoms=step_atoms[cutoffatomid]
-                results.append((str(step),str(atoma),",".join(str(x) for x in self.calcoulumbmatrix(cutoffatoms))))
+                results.append((str(step),str(atoma),",".join(str(x) for x in self.calcoulumbmatrix(cutoffatoms),",".join(cutoffatoms.get_chemical_symbols()))))
         return results
 
     def calcoulumbmatrix(self,atoms):
@@ -196,20 +198,26 @@ class DatasetMaker(object):
     def selectatoms(self,trajatomfilename):
         coulumbmatrix=[]
         stepatom=[]
-        maxsize=0
+        max_counter=Counter()
         with open(os.path.join(self.trajatom_dir,"coulumbmatrix."+trajatomfilename)) as f:
             for line in f:
                 s=line.split()
                 stepatom.append([s[x] for x in range(2)])
                 mline=[float(x) for x in s[2].split(",")]
-                maxsize=max(maxsize,len(mline))
-                coulumbmatrix.append(mline)
-        chooseindexs=self.clusterdatas(-np.sort(-np.array([mline+[0]*(maxsize-len(mline)) for mline in coulumbmatrix])),n_clusters=self.n_clusters) if len(coulumbmatrix)>self.n_clusters else range(len(coulumbmatrix))
-        with open(os.path.join(self.trajatom_dir,"chooseatoms."+trajatomfilename),'w') as f:
-            for index in chooseindexs:
+                symbols=s[3].split(",")
+                max_counter|=Counter(symbols)
+                coulumbmatrix.append(mline,symbols)
+        self.logging("Max counter of",trajatomfilename,"is",max_counter)
+        chooseindexs=self.clusterdatas([sum([-np.sort(-np.array([mline[[idx for idx,s in enumerate(symbols) if s==symbol]]+[atomic_numbers[symbol]**2.4/2]*(max_counter[symbol]-symbols.count(symbol)])])) for symbol in max_counter],[]) for mline,symbols in coulumbmatrix],n_clusters=self.n_clusters) if len(coulumbmatrix)>self.n_clusters else range(len(coulumbmatrix))
+        with open(os.path.join(self.trajatom_dir,"chooseatoms."+trajatomfilename),'w') as f,open(os.path.join(self.trajatom_dir,"vector."+trajatomfilename),'w') as fv:
+            for index,value in chooseindexs:
                 print(*stepatom[index],file=f)
+                print(*value,file=fv)
+
 
     def clusterdatas(self,X,n_clusters=10000):
+        min_max_scaler = preprocessing.MinMaxScaler()
+        X = min_max_scaler.fit_transform(X)
         clus=MiniBatchKMeans(n_clusters=n_clusters)
         labels=clus.fit_predict(X)
         chooseindex={}
@@ -223,7 +231,7 @@ class DatasetMaker(object):
             else:
                 chooseindex[label]=index
                 choosenum[label]=0
-        return chooseindex.values()
+        return chooseindex.values(),X[chooseindex.values()]
 
     def mkdir(self,path):
         if not os.path.exists(path):
