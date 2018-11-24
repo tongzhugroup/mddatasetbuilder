@@ -204,7 +204,7 @@ class DatasetMaker(object):
                 mline=[float(x) for x in s[2].split(",")]
                 maxsize=max(maxsize,len(mline))
                 coulumbmatrix.append(mline)
-        chooseindexs=self.clusterdatas(np.array([mline+[0]*(maxsize-len(mline)) for mline in coulumbmatrix]),n_clusters=self.n_clusters) if len(coulumbmatrix)>self.n_clusters else range(len(coulumbmatrix))
+        chooseindexs=self.clusterdatas(-np.sort(-np.array([mline+[0]*(maxsize-len(mline)) for mline in coulumbmatrix])),n_clusters=self.n_clusters) if len(coulumbmatrix)>self.n_clusters else range(len(coulumbmatrix))
         with open(os.path.join(self.trajatom_dir,"chooseatoms."+trajatomfilename),'w') as f:
             for index in chooseindexs:
                 print(*stepatom[index],file=f)
