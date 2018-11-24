@@ -218,7 +218,7 @@ class DatasetMaker(object):
         min_max_scaler = preprocessing.MinMaxScaler()
         X=np.array(min_max_scaler.fit_transform(X))
         if undersampling:
-            clus=MiniBatchKMeans(n_clusters=n_clusters,init_size=(3*n_clusters if 3*n_clusters>len(X) else len(X)))
+            clus=MiniBatchKMeans(n_clusters=n_clusters,init_size=(3*n_clusters if 3*n_clusters<len(X) else len(X)))
             labels=clus.fit_predict(X)
             chooseindex={}
             choosenum={}
