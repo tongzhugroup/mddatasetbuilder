@@ -91,14 +91,12 @@ class DatasetMaker(object):
                 matoms=np.array([int(x) for x in sm[1].split(",")])
                 mbonds=np.array([[int(y) for y in x.split(",")] for x in sm[2].split(";")]) if len(sm)==3 else np.array([])
                 for atom in matoms:
-                    if self.atomname[self.atomtype[atom]-1] in self.clusteratom:
-                        atombond=[]
-                        for bond in mbonds:
-                            if bond[0]==atom or bond[1]==atom:
-                                atombond.append(bond[2])
+                    atomname=self.atomname[self.atomtype[atom-1]-1]
+                    if atomname in self.clusteratom:
+                        atombond=[bond[2] for bond in mbonds if bond[0]==atom or bond[1]==atom]
                         atombondstr="".join(str(x) for x in sorted(atombond))
-                        bondtype=self.atomname[self.atomtype[atom]-1]+atombondstr
-                        with open(os.path.join(self.trajatom_dir,"trajatom."+self.atomname[self.atomtype[atom]-1]+atombondstr),'a' if bondtype in self.atombondtype else 'w') as f:
+                        bondtype=atomname+atombondstr
+                        with open(os.path.join(self.trajatom_dir,"trajatom."+bondtype),'a' if bondtype in self.atombondtype else 'w') as f:
                             print(atom,st[-1],file=f)
                         if not bondtype in self.atombondtype:
                             self.atombondtype.append(bondtype)
