@@ -9,7 +9,7 @@ import shutil
 import time
 from sklearn.cluster import MiniBatchKMeans
 from sklearn import preprocessing
-from ReacNetGenerator import ReacNetGenerator
+from reacnetgenerator import ReacNetGenerator
 from multiprocessing import Pool, Semaphore, cpu_count
 from ase import Atoms, Atom
 from ase.io import write as write_xyz
@@ -56,7 +56,7 @@ class DatasetMaker(object):
         for runstep in range(6):
             if runstep==0:
                 if processtraj:
-                    self.logging("Run ReacNetGenerator......")
+                    self.logging("Analyze the trajectory via ReacNetGenerator......")
                     self.ReacNetGenerator.inputfilename=self.bondfilename
                     self.ReacNetGenerator.run()
             elif runstep==1:
@@ -84,10 +84,10 @@ class DatasetMaker(object):
 
     def readmoname(self):
         self.mkdir(self.trajatom_dir)
-        with open(self.moleculefilename) as fm,open(self.tempfilename) as ft:
+        with open(self.moleculefilename) as fm,open(self.tempfilename,'rb') as ft:
             for linem,linet in zip(fm,ft):
                 sm=linem.split()
-                st=linet.split()
+                st=self.ReacNetGenerator._decompress(linet).split()
                 matoms=np.array([int(x) for x in sm[1].split(",")])
                 mbonds=np.array([[int(y) for y in x.split(",")] for x in sm[2].split(";")]) if len(sm)==3 else np.array([])
                 for atom in matoms:
@@ -158,10 +158,10 @@ class DatasetMaker(object):
 
     def readlammpscrdN(self):
         self.ReacNetGenerator.inputfilename=self.bondfilename
-        self.bondsteplinenum=self.ReacNetGenerator.readlammpsbondN()
+        self.bondsteplinenum=self.ReacNetGenerator._readlammpsbondN()
         self.ReacNetGenerator.inputfilename=self.dumpfilename
-        self.steplinenum=self.ReacNetGenerator.readlammpscrdN()
-        self.atomtype=self.ReacNetGenerator.atomtype
+        self.steplinenum=self.ReacNetGenerator._readlammpscrdN()
+        self.atomtype=self.ReacNetGenerator._atomtype
 
     def writecoulumbmatrix(self,trajatomfilename):
         self.dstep={}
@@ -184,8 +184,8 @@ class DatasetMaker(object):
             step_atoms=self.readlammpscrdstep(item)
             for atoma in self.dstep[step]:
                 # atom ID starts from 1
-                distances=step_atoms.get_distances(atoma-1,np.arange(len(step_atoms)),mic=True)
-                cutoffatomid=[i for i in np.arange(len(step_atoms)) if distances[i]<self.cutoff]
+                distances=step_atoms.get_distances(atoma-1,range(len(step_atoms)),mic=True)
+                cutoffatomid=[i for i in range(len(step_atoms)) if distances[i]<self.cutoff]
                 cutoffatoms=step_atoms[cutoffatomid]
                 results.append((str(step),str(atoma),",".join(str(x) for x in self.calcoulumbmatrix(cutoffatoms)),",".join(cutoffatoms.get_chemical_symbols())))
         return results
@@ -278,15 +278,15 @@ class DatasetMaker(object):
         results=[]
         if step in self.dstep:
             step_atoms=self.readlammpscrdstep(((step,dumplines),None))
-            molecules=self.ReacNetGenerator.readlammpsbondstep(((step,bondlines),None))[0].keys()
+            molecules=self.ReacNetGenerator._readlammpsbondstep(((step,bondlines),None))[0]
             for atoma in self.dstep[step]:
                 # atom ID starts from 1
-                distances=step_atoms.get_distances(atoma-1,np.arange(len(step_atoms)),mic=True)
-                cutoffatomid=[i for i in np.arange(len(step_atoms)) if distances[i]<self.cutoff]
+                distances=step_atoms.get_distances(atoma-1,range(len(step_atoms)),mic=True)
+                cutoffatomid=[i for i in range(len(step_atoms)) if distances[i]<self.cutoff]
                 # make cutoff atoms in molecules
                 oxygennum=0
                 for mo in molecules:
-                    mol_atomid=[x-1 for x in mo[0]]
+                    mol_atomid=[int(x)-1 for x in mo.split()[0].split(",")]
                     for moatom in mol_atomid:
                         if moatom in cutoffatomid:
                             cutoffatomid=list(set(cutoffatomid)|set(mol_atomid))
