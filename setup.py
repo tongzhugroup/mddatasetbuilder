@@ -7,5 +7,4 @@ setup(name='MDDatasetMaker',
       author='Jinzhe Zeng',
       author_email='jzzeng@stu.ecnu.edu.cn',
       packages=['MDDatasetMaker'],
-      install_requires=['numpy','scikit-learn','reacnetgenerator>=1.2.17','ase'])
-
+      install_requires=['numpy', 'scikit-learn', 'reacnetgenerator>=1.2.17', 'ase'])
