@@ -13,15 +13,9 @@ Email: jzzeng@stu.ecnu.edu.cn
 * [numpy](https://github.com/numpy/numpy)
 * [scikit-learn](https://github.com/scikit-learn/scikit-learn)
 * [ASE](https://gitlab.com/ase/ase)
-* [ReacNetGenerator](https://github.com/njzjz/ReacNetGenerator)
 
 ## Installation
 
-### With pip
-```sh
-$ pip install MDDatasetMaker
-```
-### Build from source
 ```sh
 $ git clone https://github.com/njzjz/MDDatasetMaker.git
 $ cd MDDatasetMaker/
