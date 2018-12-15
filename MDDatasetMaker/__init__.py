@@ -114,26 +114,26 @@ class DatasetMaker(object):
         if n_atoms > self.n_clusters:
             # undersampling
             stepatom = []
-            coulumbmatrix = []
             feedvector = []
             max_counter = Counter()
-            with open(self.dumpfilename) as f, Pool(self.nproc, maxtasksperchild=100) as pool:
+            with open(self.dumpfilename) as f, Pool(self.nproc, maxtasksperchild=100) as pool, open(os.path.join(self.trajatom_dir, f"coulumbmatrix.{trajatomfilename}"), 'wb') as fm:
                 semaphore = Semaphore(360)
                 results = pool.imap_unordered(self._writestepmatrix, self._produce(semaphore, enumerate(
                     itertools.islice(itertools.zip_longest(*[f]*self.steplinenum), 0, None, self.stepinterval)), None), 10)
                 for index, result in enumerate(results):
                     self._loggingprocessing(index)
-                    for stepa, mline, symbols in result:
-                        stepatom.append(stepa)
+                    for line, symbols in result:
+                        fm.write(line)
                         max_counter |= Counter(symbols)
-                        coulumbmatrix.append((mline, symbols))
                     semaphore.release()
-                self._logging("Max counter of", trajatomfilename,
-                              "is", max_counter)
-                results = pool.imap(self._getfeedvector, self._produce(
-                    semaphore, coulumbmatrix, max_counter))
-                for index, result in enumerate(results):
+                self._logging(
+                    f"Max counter of {trajatomfilename} is {max_counter}")
+            with open(os.path.join(self.trajatom_dir, f"coulumbmatrix.{trajatomfilename}"), 'rb') as fm, Pool(self.nproc, maxtasksperchild=100) as pool:
+                results = pool.imap_unordered(self._getfeedvector, self._produce(
+                    semaphore, fm, max_counter))
+                for index, (step, atoma, result) in enumerate(results):
                     self._loggingprocessing(index)
+                    stepatom.append((step, atoma))
                     feedvector.append(result)
                     semaphore.release()
             choosedindexs = self._clusterdatas(
@@ -145,8 +145,11 @@ class DatasetMaker(object):
                                                     for x in stepatom[index])) for index in choosedindexs))))
 
     def _getfeedvector(self, item):
-        (mline, symbols), max_counter = item
-        return np.concatenate([-np.sort(-np.concatenate((mline[[idx for idx, s in enumerate(symbols) if s == symbol]], [atomic_numbers[symbol]**2.4/2]*(
+        line, max_counter = item
+        step, atoma, matrixstr, symbolstr = self._decompress(line).split()
+        mline = np.array([float(x) for x in matrixstr.split(";")])
+        symbols = symbolstr.split(";")
+        return int(step), int(atoma), np.concatenate([-np.sort(-np.concatenate((mline[[idx for idx, s in enumerate(symbols) if s == symbol]], [atomic_numbers[symbol]**2.4/2]*(
             max_counter[symbol]-symbols.count(symbol))))) for symbol in max_counter])
 
     def _writestepmatrix(self, item):
@@ -161,31 +164,32 @@ class DatasetMaker(object):
                 cutoffatomid = [i for i in range(
                     len(step_atoms)) if distances[i] < self.cutoff]
                 cutoffatoms = step_atoms[cutoffatomid]
-                results.append(((str(step), str(atoma)), self._calcoulumbmatrix(
-                    cutoffatoms), cutoffatoms.get_chemical_symbols()))
+                symbols = cutoffatoms.get_chemical_symbols()
+                results.append((self._compress(' '.join((str(step), str(atoma), ';'.join((str(x) for x in self._calcoulumbmatrix(
+                    cutoffatoms))), ';'.join(symbols)))), symbols))
         return results
 
     def _calcoulumbmatrix(self, atoms):
         return -np.sort(-np.linalg.eig([[atoms[i].number**2.4/2 if i == j else atoms[i].number*atoms[j].number/atoms.get_distance(i, j, mic=True) for j in range(len(atoms))] for i in range(len(atoms))])[0])
 
     def _clusterdatas(self, X, n_clusters):
-        min_max_scaler = preprocessing.MinMaxScaler()
-        X = np.array(min_max_scaler.fit_transform(X))
-        clus = MiniBatchKMeans(n_clusters=n_clusters, init_size=(
+        min_max_scaler=preprocessing.MinMaxScaler()
+        X=np.array(min_max_scaler.fit_transform(X))
+        clus=MiniBatchKMeans(n_clusters=n_clusters, init_size=(
             3*n_clusters if 3*n_clusters < len(X) else len(X)))
-        labels = clus.fit_predict(X)
-        chooseindex = {}
-        choosenum = {}
+        labels=clus.fit_predict(X)
+        chooseindex={}
+        choosenum={}
         for index, label in enumerate(labels):
             if label in chooseindex:
-                r = np.random.randint(0, choosenum[label]+1)
+                r=np.random.randint(0, choosenum[label]+1)
                 if r == 0:
-                    chooseindex[label] = index
+                    chooseindex[label]=index
                 choosenum[label] += 1
             else:
-                chooseindex[label] = index
-                choosenum[label] = 0
-        index = np.array(list(chooseindex.values()))
+                chooseindex[label]=index
+                choosenum[label]=0
+        index=np.array(list(chooseindex.values()))
         return index
 
     def _mkdir(self, path):
@@ -193,15 +197,15 @@ class DatasetMaker(object):
             os.makedirs(path)
 
     def _writexyzfiles(self):
-        self.dstep = defaultdict(list)
+        self.dstep=defaultdict(list)
         with open(os.path.join(self.trajatom_dir, "chooseatoms"), 'rb') as fc, open(self.dumpfilename) as f, open(self.bondfilename) as fb, Pool(self.nproc, maxtasksperchild=100) as pool:
-            semaphore = Semaphore(360)
+            semaphore=Semaphore(360)
             for typefile, trajatomfilename in zip(fc, self.atombondtype):
                 for line in self._decompress(typefile).split(";"):
-                    s = line.split()
+                    s=line.split()
                     self.dstep[int(s[0])].append((int(s[1]), trajatomfilename))
-            i = Counter()
-            results = pool.imap_unordered(self._writestepxyzfile, self._produce(semaphore, enumerate(zip(itertools.islice(itertools.zip_longest(
+            i=Counter()
+            results=pool.imap_unordered(self._writestepxyzfile, self._produce(semaphore, enumerate(zip(itertools.islice(itertools.zip_longest(
                 *[f]*self.steplinenum), 0, None, self.stepinterval), itertools.islice(itertools.zip_longest(*[fb]*self.bondsteplinenum), 0, None, self.stepinterval))), None), 10)
             for index, result in enumerate(results):
                 self._loggingprocessing(index)
@@ -218,8 +222,8 @@ class DatasetMaker(object):
 
     def _convertgjf(self, gjffilename, atoms, oxygennum):
         # only support CHO
-        S = atoms.get_chemical_symbols().count("H") % 2+1+oxygennum*2
-        buff = [self.qmkeywords, '',
+        S=atoms.get_chemical_symbols().count("H") % 2+1+oxygennum*2
+        buff=[self.qmkeywords, '',
                 f'{gjffilename} n_oxygen={oxygennum} by MDDatasetMaker', '', f'0 {S}']
         buff.extend(('{} {:.4f} {:.4f} {:.4f}'.format(atom.symbol, *atom.position)
                      for atom in atoms))
@@ -228,114 +232,114 @@ class DatasetMaker(object):
             f.write('\n'.join(buff))
 
     def _writestepxyzfile(self, item):
-        (step, (dumplines, bondlines)), _ = item
-        results = []
+        (step, (dumplines, bondlines)), _=item
+        results=[]
         if step in self.dstep:
-            step_atoms = self._readlammpscrdstep(((step, dumplines), None))
-            molecules = self._readlammpsbondstepmolecules(bondlines)
+            step_atoms=self._readlammpscrdstep(((step, dumplines), None))
+            molecules=self._readlammpsbondstepmolecules(bondlines)
             for atoma, trajatomfilename in self.dstep[step]:
                 # atom ID starts from 1
-                distances = step_atoms.get_distances(
+                distances=step_atoms.get_distances(
                     atoma-1, range(len(step_atoms)), mic=True)
-                cutoffatomid = [i for i in range(
+                cutoffatomid=[i for i in range(
                     len(step_atoms)) if distances[i] < self.cutoff]
                 # make cutoff atoms in molecules
-                oxygennum = 0
+                oxygennum=0
                 for mo in molecules:
-                    mol_atomid = [int(x)-1 for x in mo]
+                    mol_atomid=[int(x)-1 for x in mo]
                     for moatom in mol_atomid:
                         if moatom in cutoffatomid:
-                            cutoffatomid = list(
+                            cutoffatomid=list(
                                 set(cutoffatomid) | set(mol_atomid))
                             # oxygen
                             if step_atoms[mol_atomid].get_chemical_symbols() == ['O', 'O']:
                                 oxygennum += 1
                             break
-                cutoffatoms = step_atoms[cutoffatomid]
+                cutoffatoms=step_atoms[cutoffatomid]
                 results.append((cutoffatoms, trajatomfilename, oxygennum))
         return results
 
     def _readlammpsbondN(self):
         # copy from reacnetgenerator on 2018-12-15
         with open(self.bondfilename) as file:
-            iscompleted = False
+            iscompleted=False
             for index, line in enumerate(file):
                 if line.startswith("#"):
                     if line.startswith("# Number of particles"):
                         if iscompleted:
-                            stepbindex = index
+                            stepbindex=index
                             break
                         else:
-                            iscompleted = True
-                            stepaindex = index
-                        N = [int(s) for s in line.split() if s.isdigit()][0]
-                        atomtype = np.zeros(N, dtype=np.int)
+                            iscompleted=True
+                            stepaindex=index
+                        N=[int(s) for s in line.split() if s.isdigit()][0]
+                        atomtype=np.zeros(N, dtype=np.int)
                 else:
-                    s = line.split()
-                    atomtype[int(s[0])-1] = int(s[1])
-        steplinenum = stepbindex-stepaindex
-        self._N = N
-        self.atomtype = atomtype
+                    s=line.split()
+                    atomtype[int(s[0])-1]=int(s[1])
+        steplinenum=stepbindex-stepaindex
+        self._N=N
+        self.atomtype=atomtype
         return steplinenum
 
     def _readlammpscrdN(self):
         # copy from reacnetgenerator on 2018-12-15
         with open(self.dumpfilename) as f:
-            iscompleted = False
+            iscompleted=False
             for index, line in enumerate(f):
                 if line.startswith("ITEM:"):
-                    linecontent = 4 if line.startswith("ITEM: TIMESTEP") else (3 if line.startswith(
+                    linecontent=4 if line.startswith("ITEM: TIMESTEP") else (3 if line.startswith(
                         "ITEM: ATOMS") else (1 if line.startswith("ITEM: NUMBER OF ATOMS") else 2))
                 else:
                     if linecontent == 1:
                         if iscompleted:
-                            stepbindex = index
+                            stepbindex=index
                             break
                         else:
-                            iscompleted = True
-                            stepaindex = index
-        steplinenum = stepbindex-stepaindex
+                            iscompleted=True
+                            stepaindex=index
+        steplinenum=stepbindex-stepaindex
         return steplinenum
 
     def _readlammpsbondstepmolecules(self, lines):
         # copy from reacnetgenerator on 2018-12-15
-        bond = [None for x in range(self._N)]
+        bond=[None for x in range(self._N)]
         for line in lines:
             if line:
                 if not line.startswith("#"):
-                    s = line.split()
-                    bond[int(s[0])-1] = [int(x) for x in s[3:3+int(s[2])]]
-        molecules = self._connectmolecule(bond)
+                    s=line.split()
+                    bond[int(s[0])-1]=[int(x) for x in s[3:3+int(s[2])]]
+        molecules=self._connectmolecule(bond)
         return molecules
 
     def _connectmolecule(self, bond):
         # copy from reacnetgenerator on 2018-12-15
-        molecules = []
-        done = np.zeros(self._N, dtype=bool)
+        molecules=[]
+        done=np.zeros(self._N, dtype=bool)
         for i in range(1, self._N+1):
             if not done[i-1]:
-                mole, done = self._mo(i, bond, [], done)
+                mole, done=self._mo(i, bond, [], done)
                 molecules.append(sorted(mole))
         return molecules
 
     def _mo(self, i, bond, molecule, done):
         # copy from reacnetgenerator on 2018-12-15
         molecule.append(i)
-        done[i-1] = True
+        done[i-1]=True
         for b in bond[i-1]:
             if not done[b-1]:
-                molecule, done = self._mo(b, bond, molecule, done)
+                molecule, done=self._mo(b, bond, molecule, done)
         return molecule, done
 
     def _readlammpsbondstep(self, item):
         # copy from reacnetgenerator on 2018-12-15
-        (step, lines), _ = item
-        d = defaultdict(list)
+        (step, lines), _=item
+        d=defaultdict(list)
         for line in lines:
             if line:
                 if not line.startswith("#"):
-                    s = line.split()
-                    atombondstr = "".join(str(x) for x in sorted(
+                    s=line.split()
+                    atombondstr="".join(str(x) for x in sorted(
                         [max(1, round(float(x))) for x in s[4+int(s[2]):4+2*int(s[2])]]))
                     d[self.atomname[self.atomtype[int(
                         s[0])-1]-1]+atombondstr].append(int(s[0]))
@@ -343,18 +347,18 @@ class DatasetMaker(object):
 
     def _readtimestepsbond(self):
         # added on 2018-12-15
-        stepatomfiles = {}
+        stepatomfiles={}
         self._mkdir(self.trajatom_dir)
         with open(self.bondfilename) as file, Pool(self.nproc, maxtasksperchild=1000) as pool:
-            semaphore = Semaphore(360)
-            results = pool.imap_unordered(self._readlammpsbondstep, self._produce(semaphore, enumerate(itertools.islice(
+            semaphore=Semaphore(360)
+            results=pool.imap_unordered(self._readlammpsbondstep, self._produce(semaphore, enumerate(itertools.islice(
                 itertools.zip_longest(*[file]*self.bondsteplinenum), 0, None, self.stepinterval)), None), 10)
             for index, (d, step) in enumerate(results):
                 self._loggingprocessing(index)
                 for bondtype, atomids in d.items():
                     if not bondtype in self.atombondtype:
                         self.atombondtype.append(bondtype)
-                        stepatomfiles[bondtype] = open(os.path.join(
+                        stepatomfiles[bondtype]=open(os.path.join(
                             self.trajatom_dir, f'stepatom.{bondtype}'), 'wb')
                     stepatomfiles[bondtype].write(self._compress(
                         ''.join((str(step), ' ', ','.join((str(x) for x in atomids)), '\n'))))
