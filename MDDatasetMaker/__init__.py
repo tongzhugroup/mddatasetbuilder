@@ -179,7 +179,7 @@ class DatasetMaker(object):
         top = np.outer(atoms.numbers, atoms.numbers).astype(np.float64)
         r = atoms.get_all_distances(mic=True)
         diag = np.array([self._coulumbdiag[symbol]
-                         for symbol in atoms.symbols])
+                         for symbol in atoms.get_chemical_symbols()])
         with np.errstate(divide='ignore', invalid='ignore'):
             np.divide(top, r, top)
             np.fill_diagonal(top, diag)
