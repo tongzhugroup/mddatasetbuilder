@@ -18,8 +18,8 @@ from sklearn.cluster import MiniBatchKMeans
 
 __author__ = "Jinzhe Zeng"
 __email__ = "jzzeng@stu.ecnu.edu.cn"
-__update__ = '2018-12-15'
-__version__ = '1.0.10'
+__update__ = '2019-1-2'
+__version__ = '1.0.11'
 
 
 class DatasetMaker(object):
@@ -44,6 +44,8 @@ class DatasetMaker(object):
         self.pbc = pbc
         self.loggingfreq = 1000
         self.fragment = fragment
+        self._coulumbdiag = dict(
+            ((symbol, atomic_numbers[symbol]**2.4/2) for symbol in atomname))
 
     def makedataset(self, processtraj=None, writegjf=True):
         self.writegjf = writegjf
@@ -114,8 +116,6 @@ class DatasetMaker(object):
         n_atoms = sum(len(x) for x in self.dstep.values())
         if n_atoms > self.n_clusters:
             # undersampling
-            stepatom = []
-            feedvector = []
             max_counter = Counter()
             with open(self.dumpfilename) as f, Pool(self.nproc, maxtasksperchild=10000) as pool, open(os.path.join(self.trajatom_dir, f"coulumbmatrix.{trajatomfilename}"), 'wb') as fm:
                 semaphore = Semaphore(360)
@@ -130,16 +130,18 @@ class DatasetMaker(object):
                 self._logging(
                     f"Max counter of {trajatomfilename} is {max_counter}")
             with open(os.path.join(self.trajatom_dir, f"coulumbmatrix.{trajatomfilename}"), 'rb') as fm, Pool(self.nproc, maxtasksperchild=10000) as pool:
+                feedvector = np.zeros((n_atoms, sum(max_counter.values())))
+                stepatom = np.zeros((n_atoms, 2), dtype=np.int8)
                 semaphore = Semaphore(360)
                 results = pool.imap_unordered(self._getfeedvector, self._produce(
                     semaphore, fm, max_counter))
                 for index, (stepatoma, result) in enumerate(results):
                     self._loggingprocessing(index)
-                    stepatom.append(stepatoma)
-                    feedvector.append(result)
+                    stepatom[index] = stepatoma
+                    feedvector[index] = result
                     semaphore.release()
             choosedindexs = self._clusterdatas(
-                np.array(feedvector), n_clusters=self.n_clusters)
+                feedvector, n_clusters=self.n_clusters)
         else:
             stepatom = [(u, vv) for u, v in self.dstep.items() for vv in v]
             choosedindexs = range(n_atoms)
@@ -149,10 +151,11 @@ class DatasetMaker(object):
     def _getfeedvector(self, item):
         line, max_counter = item
         step, atoma, matrixstr, symbolstr = self._decompress(line).split()
-        mline = np.array([float(x) for x in matrixstr.split(";")])
         symbols = symbolstr.split(";")
-        return (int(step), int(atoma)), np.concatenate([-np.sort(-np.concatenate((mline[[idx for idx, s in enumerate(symbols) if s == symbol]], [atomic_numbers[symbol]**2.4/2]*(
-            max_counter[symbol]-symbols.count(symbol))))) for symbol in max_counter])
+        mline = [float(x) for x in matrixstr.split(";")]
+        mline.extend([self._coulumbdiag[element]
+                      for element in (max_counter-Counter(symbols)).elements()])
+        return np.array([int(step), int(atoma)]), np.sort(mline)
 
     def _writestepmatrix(self, item):
         (step, _), _ = item
@@ -172,7 +175,17 @@ class DatasetMaker(object):
         return results
 
     def _calcoulumbmatrix(self, atoms):
-        return -np.sort(-np.linalg.eig([[atoms[i].number**2.4/2 if i == j else atoms[i].number*atoms[j].number/atoms.get_distance(i, j, mic=True) for j in range(len(atoms))] for i in range(len(atoms))])[0])
+        # https://github.com/crcollins/molml/blob/master/molml/utils.py
+        top = np.outer(atoms.numbers, atoms.numbers).astype(np.float64)
+        r = atoms.get_all_distances(mic=True)
+        diag = np.array([self._coulumbdiag[symbol]
+                         for symbol in atoms.symbols])
+        with np.errstate(divide='ignore', invalid='ignore'):
+            np.divide(top, r, top)
+            np.fill_diagonal(top, diag)
+        top[top == np.Infinity] = 0
+        top[np.isnan(top)] = 0
+        return np.linalg.eigh(top)[0]
 
     def _clusterdatas(self, X, n_clusters):
         min_max_scaler = preprocessing.MinMaxScaler()
