@@ -117,7 +117,7 @@ class DatasetMaker(object):
             stepatom = []
             feedvector = []
             max_counter = Counter()
-            with open(self.dumpfilename) as f, Pool(self.nproc, maxtasksperchild=100) as pool, open(os.path.join(self.trajatom_dir, f"coulumbmatrix.{trajatomfilename}"), 'wb') as fm:
+            with open(self.dumpfilename) as f, Pool(self.nproc, maxtasksperchild=10000) as pool, open(os.path.join(self.trajatom_dir, f"coulumbmatrix.{trajatomfilename}"), 'wb') as fm:
                 semaphore = Semaphore(360)
                 results = pool.imap_unordered(self._writestepmatrix, self._produce(semaphore, enumerate(
                     itertools.islice(itertools.zip_longest(*[f]*self.steplinenum), 0, None, self.stepinterval)), None), 10)
@@ -129,7 +129,7 @@ class DatasetMaker(object):
                     semaphore.release()
                 self._logging(
                     f"Max counter of {trajatomfilename} is {max_counter}")
-            with open(os.path.join(self.trajatom_dir, f"coulumbmatrix.{trajatomfilename}"), 'rb') as fm, Pool(self.nproc, maxtasksperchild=100) as pool:
+            with open(os.path.join(self.trajatom_dir, f"coulumbmatrix.{trajatomfilename}"), 'rb') as fm, Pool(self.nproc, maxtasksperchild=10000) as pool:
                 results = pool.imap_unordered(self._getfeedvector, self._produce(
                     semaphore, fm, max_counter))
                 for index, (step, atoma, result) in enumerate(results):
@@ -199,7 +199,7 @@ class DatasetMaker(object):
 
     def _writexyzfiles(self):
         self.dstep = defaultdict(list)
-        with open(os.path.join(self.trajatom_dir, "chooseatoms"), 'rb') as fc, open(self.dumpfilename) as f, open(self.bondfilename) as fb, Pool(self.nproc, maxtasksperchild=100) as pool:
+        with open(os.path.join(self.trajatom_dir, "chooseatoms"), 'rb') as fc, open(self.dumpfilename) as f, open(self.bondfilename) as fb, Pool(self.nproc, maxtasksperchild=10000) as pool:
             semaphore = Semaphore(360)
             for typefile, trajatomfilename in zip(fc, self.atombondtype):
                 for line in self._decompress(typefile).split(";"):
