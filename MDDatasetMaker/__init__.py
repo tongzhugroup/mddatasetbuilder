@@ -130,11 +130,12 @@ class DatasetMaker(object):
                 self._logging(
                     f"Max counter of {trajatomfilename} is {max_counter}")
             with open(os.path.join(self.trajatom_dir, f"coulumbmatrix.{trajatomfilename}"), 'rb') as fm, Pool(self.nproc, maxtasksperchild=10000) as pool:
+                semaphore = Semaphore(360)
                 results = pool.imap_unordered(self._getfeedvector, self._produce(
                     semaphore, fm, max_counter))
-                for index, (step, atoma, result) in enumerate(results):
+                for index, (stepatoma, result) in enumerate(results):
                     self._loggingprocessing(index)
-                    stepatom.append((step, atoma))
+                    stepatom.append(stepatoma)
                     feedvector.append(result)
                     semaphore.release()
             choosedindexs = self._clusterdatas(
@@ -150,7 +151,7 @@ class DatasetMaker(object):
         step, atoma, matrixstr, symbolstr = self._decompress(line).split()
         mline = np.array([float(x) for x in matrixstr.split(";")])
         symbols = symbolstr.split(";")
-        return int(step), int(atoma), np.concatenate([-np.sort(-np.concatenate((mline[[idx for idx, s in enumerate(symbols) if s == symbol]], [atomic_numbers[symbol]**2.4/2]*(
+        return (int(step), int(atoma)), np.concatenate([-np.sort(-np.concatenate((mline[[idx for idx, s in enumerate(symbols) if s == symbol]], [atomic_numbers[symbol]**2.4/2]*(
             max_counter[symbol]-symbols.count(symbol))))) for symbol in max_counter])
 
     def _writestepmatrix(self, item):
