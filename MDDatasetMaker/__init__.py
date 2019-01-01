@@ -117,45 +117,35 @@ class DatasetMaker(object):
         if n_atoms > self.n_clusters:
             # undersampling
             max_counter = Counter()
-            with open(self.dumpfilename) as f, Pool(self.nproc, maxtasksperchild=10000) as pool, open(os.path.join(self.trajatom_dir, f"coulumbmatrix.{trajatomfilename}"), 'wb') as fm:
+            stepatom = np.zeros((n_atoms, 2), dtype=np.int8)
+            feedvector = np.zeros((n_atoms, 0))
+            vector_elements = defaultdict(list)
+            with open(self.dumpfilename) as f, Pool(self.nproc, maxtasksperchild=10000) as pool:
                 semaphore = Semaphore(360)
                 results = pool.imap_unordered(self._writestepmatrix, self._produce(semaphore, enumerate(
                     itertools.islice(itertools.zip_longest(*[f]*self.steplinenum), 0, None, self.stepinterval)), None), 10)
                 for index, result in enumerate(results):
                     self._loggingprocessing(index)
-                    for line, symbols in result:
-                        fm.write(line)
-                        max_counter |= Counter(symbols)
+                    for stepatoma, vector, symbols_counter in result:
+                        stepatom[index] = stepatoma
+                        for element in (symbols_counter-max_counter).elements():
+                            vector_elements[element].append(
+                                feedvector.shape[1])
+                            feedvector = np.pad(feedvector, ((0, 0), (0, 1)), 'constant', constant_values=(
+                                0, self._coulumbdiag[element]))
+                        feedvector[index, sum(
+                            [vector_elements[symbol][:size] for symbol, size in symbols_counter.items()], [])] = vector
+                        max_counter |= symbols_counter
                     semaphore.release()
                 self._logging(
                     f"Max counter of {trajatomfilename} is {max_counter}")
-            with open(os.path.join(self.trajatom_dir, f"coulumbmatrix.{trajatomfilename}"), 'rb') as fm, Pool(self.nproc, maxtasksperchild=10000) as pool:
-                feedvector = np.zeros((n_atoms, sum(max_counter.values())))
-                stepatom = np.zeros((n_atoms, 2), dtype=np.int8)
-                semaphore = Semaphore(360)
-                results = pool.imap_unordered(self._getfeedvector, self._produce(
-                    semaphore, fm, max_counter))
-                for index, (stepatoma, result) in enumerate(results):
-                    self._loggingprocessing(index)
-                    stepatom[index] = stepatoma
-                    feedvector[index] = result
-                    semaphore.release()
             choosedindexs = self._clusterdatas(
-                feedvector, n_clusters=self.n_clusters)
+                np.sort(feedvector), n_clusters=self.n_clusters)
         else:
             stepatom = [(u, vv) for u, v in self.dstep.items() for vv in v]
             choosedindexs = range(n_atoms)
         fc.write(self._compress(';'.join((' '.join((str(x)
                                                     for x in stepatom[index])) for index in choosedindexs))))
-
-    def _getfeedvector(self, item):
-        line, max_counter = item
-        step, atoma, matrixstr, symbolstr = self._decompress(line).split()
-        symbols = symbolstr.split(";")
-        mline = [float(x) for x in matrixstr.split(";")]
-        mline.extend([self._coulumbdiag[element]
-                      for element in (max_counter-Counter(symbols)).elements()])
-        return np.array([int(step), int(atoma)]), np.sort(mline)
 
     def _writestepmatrix(self, item):
         (step, _), _ = item
@@ -170,8 +160,8 @@ class DatasetMaker(object):
                     len(step_atoms)) if distances[i] < self.cutoff]
                 cutoffatoms = step_atoms[cutoffatomid]
                 symbols = cutoffatoms.get_chemical_symbols()
-                results.append((self._compress(' '.join((str(step), str(atoma), ';'.join((str(x) for x in self._calcoulumbmatrix(
-                    cutoffatoms))), ';'.join(symbols)))), symbols))
+                results.append((np.array([int(step), int(atoma)]), self._calcoulumbmatrix(
+                    cutoffatoms), Counter(symbols)))
         return results
 
     def _calcoulumbmatrix(self, atoms):
