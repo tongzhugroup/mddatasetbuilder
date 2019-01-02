@@ -124,18 +124,20 @@ class DatasetMaker(object):
                 semaphore = Semaphore(360)
                 results = pool.imap_unordered(self._writestepmatrix, self._produce(semaphore, enumerate(
                     itertools.islice(itertools.zip_longest(*[f]*self.steplinenum), 0, None, self.stepinterval)), None), 10)
+                j = 0
                 for index, result in enumerate(results):
                     self._loggingprocessing(index)
                     for stepatoma, vector, symbols_counter in result:
-                        stepatom[index] = stepatoma
+                        stepatom[j] = stepatoma
                         for element in (symbols_counter-max_counter).elements():
                             vector_elements[element].append(
                                 feedvector.shape[1])
                             feedvector = np.pad(feedvector, ((0, 0), (0, 1)), 'constant', constant_values=(
                                 0, self._coulumbdiag[element]))
-                        feedvector[index, sum(
+                        feedvector[j, sum(
                             [vector_elements[symbol][:size] for symbol, size in symbols_counter.items()], [])] = vector
                         max_counter |= symbols_counter
+                        j += 1
                     semaphore.release()
                 self._logging(
                     f"Max counter of {trajatomfilename} is {max_counter}")
