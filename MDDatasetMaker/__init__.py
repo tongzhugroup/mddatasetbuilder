@@ -18,7 +18,7 @@ from sklearn.cluster import MiniBatchKMeans
 
 __author__ = "Jinzhe Zeng"
 __email__ = "jzzeng@stu.ecnu.edu.cn"
-__update__ = '2019-1-2'
+__update__ = '2019-1-3'
 __version__ = '1.0.11'
 
 
@@ -258,7 +258,7 @@ class DatasetMaker(object):
                 (f'0 {multiplicity}' for multiplicity in itertools.chain((multiplicity_whole,), multiplicities)))
             buff.extend((chk, kw1, title, multiplicities_str))
             for index, atoms in enumerate(selected_atoms, 1):
-                buff.extend(('{}(Fragment={}) {} {} {}'.format(
+                buff.extend(('{}(Fragment={}) {:.5f} {:.5f} {:.5f}'.format(
                     atom.symbol, index, *atom.position) for atom in atoms))
             buff.extend((connect, chk, kw2,
                          title, multiplicities_str, '\n'))
