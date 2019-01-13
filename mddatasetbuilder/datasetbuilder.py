@@ -21,7 +21,7 @@ from sklearn.cluster import MiniBatchKMeans
 __author__ = "Jinzhe Zeng"
 __email__ = "jzzeng@stu.ecnu.edu.cn"
 __update__ = '2019-01-13'
-__data__ = '2018-07-18'
+__date__ = '2018-07-18'
 __version__ = '1.0.12'
 
 
@@ -50,7 +50,7 @@ class DatasetBuilder(object):
         self._coulumbdiag = dict(
             ((symbol, atomic_numbers[symbol]**2.4/2) for symbol in atomname))
 
-    def builddataset(self, processtraj=None, writegjf=True):
+    def builddataset(self, writegjf=True):
         self.writegjf = writegjf
         timearray = self._printtime([])
         for runstep in range(3):
@@ -215,20 +215,27 @@ class DatasetBuilder(object):
                     s = line.split()
                     self.dstep[int(s[0])].append((int(s[1]), trajatomfilename))
             i = Counter()
+            ii = 0
+            maxlength = len(str(self.n_clusters))
             results = pool.imap_unordered(self._writestepxyzfile, self._produce(semaphore, enumerate(zip(itertools.islice(itertools.zip_longest(
                 *[f]*self.steplinenum), 0, None, self.stepinterval), itertools.islice(itertools.zip_longest(*[fb]*self.bondsteplinenum), 0, None, self.stepinterval))), None), 10)
-            for index, result in enumerate(results):
-                self._loggingprocessing(index)
+            for result in results:
                 for takenatoms, trajatomfilename in result:
+                    self._loggingprocessing(ii)
+                    folder=str(ii//1000).zfill(3)
+                    atomtypenum=str(i[trajatomfilename]).zfill(maxlength)
+                    self._mkdir(os.path.join(self.dataset_dir,folder))
                     cutoffatoms = sum(takenatoms, Atoms())
                     cutoffatoms.wrap(
                         center=cutoffatoms[0].position/cutoffatoms.get_cell_lengths_and_angles()[0:3], pbc=cutoffatoms.get_pbc())
                     write_xyz(os.path.join(
-                        self.dataset_dir, f'{self.xyzfilename}_{trajatomfilename}_{i[trajatomfilename]}.xyz'), cutoffatoms, format='xyz')
+                        self.dataset_dir, folder, f'{self.xyzfilename}_{trajatomfilename}_{atomtypenum}.xyz'), cutoffatoms, format='xyz')
                     if self.writegjf:
+                        self._mkdir(os.path.join(self.gjfdir,folder))
                         self._convertgjf(os.path.join(
-                            self.gjfdir, f'{self.xyzfilename}_{trajatomfilename}_{i[trajatomfilename]}.gjf'), takenatoms)
+                            self.gjfdir, folder, f'{self.xyzfilename}_{trajatomfilename}_{atomtypenum}.gjf'), takenatoms)
                     i[trajatomfilename] += 1
+                    ii += 1
                 semaphore.release()
 
     def _convertgjf(self, gjffilename, selected_atoms):
