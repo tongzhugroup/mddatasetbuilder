@@ -11,10 +11,10 @@ def qmcalc(dir, command='g16'):
 
 
 def _commandline():
-    parser = argparse.ArgumentParser(description='MDDatasetBuilder')
+    parser = argparse.ArgumentParser(description='QM Calculator')
     parser.add_argument('-d', '--dir',
                         help='Dataset dirs', required=True)
     parser.add_argument('-c', '--command',
-                        help='Gaussian command, default is g16')
+                        help='Gaussian command, default is g16', default="g16")
     args = parser.parse_args()
     qmcalc(dir=args.dir, command=args.command)
