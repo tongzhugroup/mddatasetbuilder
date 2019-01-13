@@ -1,35 +1,38 @@
-''' MDDatasetMaker '''
+''' MDDatasetBuilder '''
 
+import argparse
+import base64
+import gc
+import itertools
+import os
+import shutil
+import time
+import zlib
 from collections import Counter, defaultdict
 from multiprocessing import Pool, Semaphore, cpu_count
-import time
-import shutil
-import gc
-import os
-import itertools
-import base64
-import zlib
+
 import numpy as np
+from ase import Atom, Atoms
 from ase.data import atomic_numbers
 from ase.io import write as write_xyz
-from ase import Atoms, Atom
 from sklearn import preprocessing
 from sklearn.cluster import MiniBatchKMeans
 
 __author__ = "Jinzhe Zeng"
 __email__ = "jzzeng@stu.ecnu.edu.cn"
-__update__ = '2019-1-3'
-__version__ = '1.0.11'
+__update__ = '2019-01-13'
+__data__ = '2018-07-18'
+__version__ = '1.0.12'
 
 
-class DatasetMaker(object):
-    def __init__(self, atomname=["C", "H", "O"], clusteratom=None, bondfilename="bonds.reaxc", dumpfilename="dump.reaxc", moleculefilename=None, tempfilename=None, dataset_dir="dataset", xyzfilename="md", cutoff=5, stepinterval=1, n_clusters=10000, qmkeywords="%nproc=4\n#mn15/6-31g(d,p)", nproc=None, pbc=True, fragment=True):
+class DatasetBuilder(object):
+    def __init__(self, atomname=["C", "H", "O"], clusteratom=None, bondfilename="bonds.reaxc", dumpfilename="dump.reaxc", dataset_name="md", cutoff=5, stepinterval=1, n_clusters=10000, qmkeywords="%nproc=4\n#mn15/6-31g(d,p)", nproc=None, pbc=True, fragment=True):
         print(__doc__)
         print(f"Author:{__author__}  Email:{__email__}")
         self.dumpfilename = dumpfilename
         self.bondfilename = bondfilename
-        self.dataset_dir = dataset_dir
-        self.xyzfilename = xyzfilename
+        self.dataset_dir = f"dataset_{dataset_name}"
+        self.xyzfilename = dataset_name
         self.atomname = atomname
         self.clusteratom = clusteratom if clusteratom else atomname
         self.atombondtype = []
@@ -47,7 +50,7 @@ class DatasetMaker(object):
         self._coulumbdiag = dict(
             ((symbol, atomic_numbers[symbol]**2.4/2) for symbol in atomname))
 
-    def makedataset(self, processtraj=None, writegjf=True):
+    def builddataset(self, processtraj=None, writegjf=True):
         self.writegjf = writegjf
         timearray = self._printtime([])
         for runstep in range(3):
@@ -406,3 +409,28 @@ class DatasetMaker(object):
 
     def _decompress(self, x):
         return zlib.decompress(base64.a85decode(x.strip())).decode()
+
+
+def _commandline():
+    parser = argparse.ArgumentParser(description='MDDatasetBuilder')
+    parser.add_argument('-d', '--dumpfile',
+                        help='Input dump file, e.g. dump.reaxc', required=True)
+    parser.add_argument('-b', '--bondfile',
+                        help='Input bond file, e.g. bonds.reaxc', required=True)
+    parser.add_argument(
+        '-a', '--atomname', help='Atomic names in the trajectory, e.g. C H O', nargs='*', required=True)
+    parser.add_argument(
+        '-np', '--nproc', help='Number of processes')
+    parser.add_argument(
+        '-c', '--cutoff', help='Cutoff radius (default is 5.0)', default=5.)
+    parser.add_argument(
+        '-i', '--interval', help='Step interval (default is 1)', default=1)
+    parser.add_argument(
+        '-s', '--size', help='Dataset size (default is 10,000)', default=10000)
+    parser.add_argument(
+        '-k', '--qmkeywords', help='QM keywords (default is %%nproc=4 #mn15/6-31g**)', default="%nproc=4\n#mn15/6-31g**")
+    parser.add_argument(
+        '-n', '--name', help='Dataset name (default is md)', default="md")
+    args = parser.parse_args()
+    DatasetBuilder(atomname=args.atomname, bondfilename=args.bondfile, dumpfilename=args.dumpfile, dataset_name=args.name,
+                   cutoff=args.cutoff, stepinterval=args.interval, n_clusters=args.size, qmkeywords=args.qmkeywords, nproc=args.nproc).builddataset()
