@@ -7,7 +7,7 @@ setup(name='mddatasetbuilder',
       author='Jinzhe Zeng',
       author_email='jzzeng@stu.ecnu.edu.cn',
       packages=['mddatasetbuilder'],
-      install_requires=['numpy', 'scikit-learn', 'ase'],
+      install_requires=['numpy', 'scikit-learn', 'ase', 'gaussianrunner'],
       entry_points={
-          'console_scripts': ['datasetbuilder=mddatasetbuilder.datasetbuilder:_commandline']
+          'console_scripts': ['datasetbuilder=mddatasetbuilder.datasetbuilder:_commandline','qmcalc=mddatasetbuilder.qmcalc:_commandline']
       })

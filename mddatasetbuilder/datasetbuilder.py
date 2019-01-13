@@ -1,4 +1,6 @@
-''' MDDatasetBuilder '''
+''' MDDatasetBuilder
+Run 'datasetbuilder -h' for more details.
+'''
 
 import argparse
 import base64
