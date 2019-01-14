@@ -1,0 +1,15 @@
+language: python
+python:
+  - "3.6"
+install:
+  - python setup.py install
+
+before_script:
+  - mkdir test && cd test
+  - wget https://dev.tencent.com/api/share/download/13c27de9-80d1-4f8d-b3da-b2ccfaa5f984 -O dump.reaxc
+  - wget https://dev.tencent.com/api/share/download/8313f258-277c-4f53-8b2f-f2db1b38d11d -O bonds.reaxc
+
+script:
+  - datasetbuilder -d dump.reaxc -b bonds.reaxc -a H O -n h2
+  - ls
+  - ls dataset_h2_GJF
