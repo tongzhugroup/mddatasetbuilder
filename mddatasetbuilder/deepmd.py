@@ -12,7 +12,7 @@ from gaussianrunner import GaussianAnalyst
 
 
 class PrepareDeePMD(object):
-    def __init__(self, data_path, atomname, deepmd_dir="deepmd", jsonfilename=os.path.join("train", "train.json"), lattice="100 0 0 0 100 0 0 0 100", virial="0 0 0 0 0 0 0 0 0"):
+    def __init__(self, data_path, atomname, deepmd_dir="data", jsonfilename=os.path.join("train", "train.json"), lattice="100 0 0 0 100 0 0 0 100", virial="0 0 0 0 0 0 0 0 0"):
         self.data_path = data_path
         self.atomname = atomname
         self.deepmd_dir = deepmd_dir
@@ -21,7 +21,7 @@ class PrepareDeePMD(object):
         self.lattcie = f"{lattice}\n"
         self.virial = f"{virial}\n"
         self.set_prefix = "set"
-        self.setdir = "{set_prefix}.000"
+        self.setdir = f"{self.set_prefix}.000"
         self.jsonfilename = jsonfilename
 
     def praparedeepmd(self):
@@ -46,14 +46,14 @@ class PrepareDeePMD(object):
             id_sorted = np.argsort(atomic_number)
             n_ele = Counter(atomic_number)
             name = "".join(
-                [f"{symbol}{n_ele[atomic_numbers[symbol]]})" for symbol in self.atomname])
-            path = os.path.join(self.deepmd_dir, f"/data_{name}")
+                [f"{symbol}{n_ele[atomic_numbers[symbol]]}" for symbol in self.atomname])
+            path = os.path.join(self.deepmd_dir, f"data_{name}")
             if not os.path.exists(path):
                 os.makedirs(path)
                 self.system_paths.append(path)
-                self.batch_size.append(max(32//atomic_number, 1))
+                self.batch_size.append(max(32//atomic_number.size, 1))
                 with open(os.path.join(path, "type.raw"), 'w') as typefile:
-                    typefile.write(" ".join((str(self.atomname.index(atomic_numbers[x]))
+                    typefile.write(" ".join((str(self.atomname.index(chemical_symbols[x]))
                                              for x in np.sort(atomic_number))))
             with open(os.path.join(path, "coord.raw"), 'a') as coordfile, open(os.path.join(path, "force.raw"), 'a') as forcefile, open(os.path.join(path, "energy.raw"), 'a') as energyfile, open(os.path.join(path, "box.raw"), 'a') as boxfile, open(os.path.join(path, "virial.raw"), 'a') as virialfile:
                 coordfile.write(
@@ -81,6 +81,7 @@ class PrepareDeePMD(object):
                         system_path, self.setdir, dataname), data)
 
     def writejson(self):
+        jsonpath = os.path.split(self.jsonfilename)[0]
         sel_a = [{"C": 40, "H": 80, "O": 40}.get(
             symbol, 40) for symbol in self.atomname]
         deepmd_json = {
@@ -95,7 +96,7 @@ class PrepareDeePMD(object):
             "fitting_resnet_dt": True,
             "coord_norm":       True,
             "type_fitting_net": False,
-            "systems":          [os.path.relpath(path,self.jsonfilename) for path in self.system_paths]
+            "systems":          [os.path.relpath(path,jsonpath) for path in self.system_paths],
             "set_prefix":       self.set_prefix,
             "stop_batch":       4000000,
             "batch_size":       self.batch_size,
@@ -119,6 +120,8 @@ class PrepareDeePMD(object):
             "time_training":    True
 
         }
+        if not os.path.exists(jsonpath):
+            os.makedirs(jsonpath)
         with open(self.jsonfilename, 'w') as f:
             json.dump(deepmd_json, f)
 
@@ -126,11 +129,11 @@ class PrepareDeePMD(object):
 def _commandline():
     parser = argparse.ArgumentParser(description='Prepare DeePMD data')
     parser.add_argument('-d', '--dir',
-                        help='Dataset dirs, default is deepmd', default="deepmd")
+                        help='Dataset dirs, default is data', default="data")
     parser.add_argument('-p', '--path',
                         help='Gaussian LOG file path, e.g. dataset_md_GJF', required=True)
     parser.add_argument(
         '-a', '--atomname', help='Atomic names in the trajectory, e.g. C H O', nargs='*', required=True)
     args = parser.parse_args()
-    PrepareDeePMD(path=args.path, deepmd_dir=args.dir,
+    PrepareDeePMD(data_path=args.path, deepmd_dir=args.dir,
                   atomname=args.atomname).praparedeepmd()
