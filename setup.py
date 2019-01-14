@@ -9,5 +9,8 @@ setup(name='mddatasetbuilder',
       packages=['mddatasetbuilder'],
       install_requires=['numpy', 'scikit-learn', 'ase', 'gaussianrunner'],
       entry_points={
-          'console_scripts': ['datasetbuilder=mddatasetbuilder.datasetbuilder:_commandline','qmcalc=mddatasetbuilder.qmcalc:_commandline']
+          'console_scripts': ['datasetbuilder=mddatasetbuilder.datasetbuilder:_commandline',
+                              'qmcalc=mddatasetbuilder.qmcalc:_commandline',
+                              'preparedeepmd=mddatasetbuilder.deepmd:_commandline'
+                              ]
       })
