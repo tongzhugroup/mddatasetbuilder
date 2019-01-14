@@ -6,8 +6,8 @@ install:
 
 before_script:
   - mkdir test && cd test
-  - wget https://dev.tencent.com/api/share/download/13c27de9-80d1-4f8d-b3da-b2ccfaa5f984 -O dump.reaxc
-  - wget https://dev.tencent.com/api/share/download/8313f258-277c-4f53-8b2f-f2db1b38d11d -O bonds.reaxc
+  - wget 'https://drive.google.com/uc?authuser=0&id=1-MZZEpTj71JJn4JfKPh5yb_lD2V7NS-Y&export=download' -O dump.reaxc
+  - wget 'https://drive.google.com/uc?authuser=0&id=1CJ22BZTh2Bg3MynHyk_CVZl0rcpSQzRn&export=download' -O bonds.reaxc
 
 script:
   - datasetbuilder -d dump.reaxc -b bonds.reaxc -a H O -n h2
