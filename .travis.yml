@@ -12,4 +12,4 @@ before_script:
 script:
   - datasetbuilder -d dump.reaxc -b bonds.reaxc -a H O -n h2
   - ls
-  - ls dataset_h2_GJF
+  - ls dataset_h2_gjf
