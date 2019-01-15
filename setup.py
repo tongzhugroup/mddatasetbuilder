@@ -13,4 +13,6 @@ setup(name='mddatasetbuilder',
                               'qmcalc=mddatasetbuilder.qmcalc:_commandline',
                               'preparedeepmd=mddatasetbuilder.deepmd:_commandline'
                               ]
-      })
+      },
+      test_suite='mddatasetbuilder.test',
+      tests_require=['requests'],)

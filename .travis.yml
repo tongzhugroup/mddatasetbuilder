@@ -4,12 +4,5 @@ python:
 install:
   - python setup.py install
 
-before_script:
-  - mkdir test && cd test
-  - wget 'https://drive.google.com/uc?authuser=0&id=1-MZZEpTj71JJn4JfKPh5yb_lD2V7NS-Y&export=download' -O dump.reaxc
-  - wget 'https://drive.google.com/uc?authuser=0&id=1CJ22BZTh2Bg3MynHyk_CVZl0rcpSQzRn&export=download' -O bonds.reaxc
-
 script:
-  - datasetbuilder -d dump.reaxc -b bonds.reaxc -a H O -n h2
-  - ls
-  - ls dataset_h2_gjf
+  - python setup.py test

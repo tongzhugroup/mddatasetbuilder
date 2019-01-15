@@ -22,6 +22,11 @@ $ cd MDDatasetMaker/
 $ python3 setup.py install
 ```
 
+You can test whether ReacNetGenerator is running normally:
+```sh
+% python3 setup.py test
+```
+
 ## Simple example
 
 A [LAMMPS bond file](http://lammps.sandia.gov/doc/fix_reax_bonds.html) and a [LAMMPS dump file](https://lammps.sandia.gov/doc/dump.html) should be prepared.
