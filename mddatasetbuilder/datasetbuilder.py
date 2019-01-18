@@ -2,6 +2,12 @@
 Run 'datasetbuilder -h' for more details.
 '''
 
+__author__ = "Jinzhe Zeng"
+__email__ = "jzzeng@stu.ecnu.edu.cn"
+__update__ = '2019-01-13'
+__date__ = '2018-07-18'
+__version__ = '1.0.12'
+
 import argparse
 import base64
 import gc
@@ -13,6 +19,8 @@ import zlib
 from collections import Counter, defaultdict
 from multiprocessing import Pool, Semaphore, cpu_count
 
+from pkg_resources import DistributionNotFound, get_distribution
+
 import numpy as np
 from ase import Atom, Atoms
 from ase.data import atomic_numbers
@@ -20,11 +28,11 @@ from ase.io import write as write_xyz
 from sklearn import preprocessing
 from sklearn.cluster import MiniBatchKMeans
 
-__author__ = "Jinzhe Zeng"
-__email__ = "jzzeng@stu.ecnu.edu.cn"
-__update__ = '2019-01-13'
-__date__ = '2018-07-18'
-__version__ = '1.0.12'
+try:
+    __version__ = get_distribution(__name__).version
+except DistributionNotFound:
+    # package is not installed
+    pass
 
 
 class DatasetBuilder(object):
@@ -224,16 +232,16 @@ class DatasetBuilder(object):
             for result in results:
                 for takenatoms, trajatomfilename in result:
                     self._loggingprocessing(ii)
-                    folder=str(ii//1000).zfill(3)
-                    atomtypenum=str(i[trajatomfilename]).zfill(maxlength)
-                    self._mkdir(os.path.join(self.dataset_dir,folder))
+                    folder = str(ii//1000).zfill(3)
+                    atomtypenum = str(i[trajatomfilename]).zfill(maxlength)
+                    self._mkdir(os.path.join(self.dataset_dir, folder))
                     cutoffatoms = sum(takenatoms, Atoms())
                     cutoffatoms.wrap(
                         center=cutoffatoms[0].position/cutoffatoms.get_cell_lengths_and_angles()[0:3], pbc=cutoffatoms.get_pbc())
                     write_xyz(os.path.join(
                         self.dataset_dir, folder, f'{self.xyzfilename}_{trajatomfilename}_{atomtypenum}.xyz'), cutoffatoms, format='xyz')
                     if self.writegjf:
-                        self._mkdir(os.path.join(self.gjfdir,folder))
+                        self._mkdir(os.path.join(self.gjfdir, folder))
                         self._convertgjf(os.path.join(
                             self.gjfdir, folder, f'{self.xyzfilename}_{trajatomfilename}_{atomtypenum}.gjf'), takenatoms)
                     i[trajatomfilename] += 1

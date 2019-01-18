@@ -1,6 +1,5 @@
 from setuptools import setup
 setup(name='mddatasetbuilder',
-      version='1.0.12',
       description='A script to make molecular dynamics (MD) datasets for neural networks from given LAMMPS trajectories automatically.',
       keywords="molecular dynamics dataset",
       url='https://github.com/njzjz/mddatasetbuilder',
@@ -15,4 +14,7 @@ setup(name='mddatasetbuilder',
                               ]
       },
       test_suite='mddatasetbuilder.test',
-      tests_require=['requests'],)
+      tests_require=['requests'],
+      use_scm_version=True,
+      setup_requires=['setuptools_scm'],
+      )
