@@ -131,7 +131,7 @@ class DatasetBuilder(object):
         if n_atoms > self.n_clusters:
             # undersampling
             max_counter = Counter()
-            stepatom = np.zeros((n_atoms, 2), dtype=np.int8)
+            stepatom = np.zeros((n_atoms, 2), dtype=np.int32)
             feedvector = np.zeros((n_atoms, 0))
             vector_elements = defaultdict(list)
             with open(self.dumpfilename) as f, Pool(self.nproc, maxtasksperchild=10000) as pool:
@@ -407,7 +407,7 @@ class DatasetBuilder(object):
             semaphore = Semaphore(360)
             results = pool.imap_unordered(self._readlammpsbondstep, self._produce(semaphore, enumerate(itertools.islice(
                 itertools.zip_longest(*[file]*self.bondsteplinenum), 0, None, self.stepinterval)), None), 10)
-            step = 0
+            nstep = 0
             for d, step in tqdm(results, desc="Read trajectory", unit="timestep"):
                 for bondtype, atomids in d.items():
                     if not bondtype in self.atombondtype:
@@ -417,7 +417,8 @@ class DatasetBuilder(object):
                     stepatomfiles[bondtype].write(self._compress(
                         ''.join((str(step), ' ', ','.join((str(x) for x in atomids)), '\n'))))
                 semaphore.release()
-            self._nstep = step+1
+                nstep += 1
+            self._nstep = nstep
         for stepatomfile in stepatomfiles.values():
             stepatomfile.close()
 
@@ -437,13 +438,13 @@ def _commandline():
     parser.add_argument(
         '-a', '--atomname', help='Atomic names in the trajectory, e.g. C H O', nargs='*', required=True)
     parser.add_argument(
-        '-np', '--nproc', help='Number of processes')
+        '-np', '--nproc', help='Number of processes', type=int)
     parser.add_argument(
-        '-c', '--cutoff', help='Cutoff radius (default is 5.0)', default=5.)
+        '-c', '--cutoff', help='Cutoff radius (default is 5.0)', type=float, default=5.)
     parser.add_argument(
-        '-i', '--interval', help='Step interval (default is 1)', default=1)
+        '-i', '--interval', help='Step interval (default is 1)', type=int, default=1)
     parser.add_argument(
-        '-s', '--size', help='Dataset size (default is 10,000)', default=10000)
+        '-s', '--size', help='Dataset size (default is 10,000)', type=int, default=10000)
     parser.add_argument(
         '-k', '--qmkeywords', help='QM keywords (default is %%nproc=4 #mn15/6-31g**)', default="%nproc=4\n#mn15/6-31g**")
     parser.add_argument(
