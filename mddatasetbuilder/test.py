@@ -4,6 +4,7 @@ python setup.py test
 
 
 import os
+import math
 import unittest
 
 from mddatasetbuilder import DatasetBuilder
