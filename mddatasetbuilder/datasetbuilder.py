@@ -13,6 +13,8 @@ import base64
 import gc
 import itertools
 import os
+import logging
+import tempfile
 import shutil
 import time
 import zlib
@@ -27,12 +29,16 @@ from ase.data import atomic_numbers
 from ase.io import write as write_xyz
 from sklearn import preprocessing
 from sklearn.cluster import MiniBatchKMeans
+from tqdm import tqdm
 
 try:
     __version__ = get_distribution(__name__).version
 except DistributionNotFound:
     # package is not installed
     pass
+
+logging.basicConfig(
+    format=f'%(asctime)s - MDDatasetBuilder {__version__} - %(levelname)s: %(message)s', level=logging.INFO)
 
 
 class DatasetBuilder(object):
@@ -46,7 +52,7 @@ class DatasetBuilder(object):
         self.atomname = atomname
         self.clusteratom = clusteratom if clusteratom else atomname
         self.atombondtype = []
-        self.trajatom_dir = "trajatom"
+        #self.trajatom_dir = "trajatom"
         self.stepinterval = stepinterval
         self.nproc = nproc if nproc else cpu_count()
         self.cutoff = cutoff
@@ -59,32 +65,29 @@ class DatasetBuilder(object):
         self.fragment = fragment
         self._coulumbdiag = dict(
             ((symbol, atomic_numbers[symbol]**2.4/2) for symbol in atomname))
+        self._nstructure = 0
 
     def builddataset(self, writegjf=True):
         self.writegjf = writegjf
         timearray = self._printtime([])
-        for runstep in range(3):
-            if runstep == 0:
-                self.bondsteplinenum = self._readlammpsbondN()
-                self._readtimestepsbond()
-            elif runstep == 1:
-                self.steplinenum = self._readlammpscrdN()
-                with open(os.path.join(self.trajatom_dir, 'chooseatoms'), 'wb') as f:
-                    for bondtype in self.atombondtype:
-                        self._logging(f'Processing {bondtype} ...', end='\r')
-                        self._writecoulumbmatrix(bondtype, f)
-                        gc.collect()
-            elif runstep == 2:
-                self._mkdir(self.dataset_dir)
-                if self.writegjf:
-                    self._mkdir(self.gjfdir)
-                self._writexyzfiles()
-            gc.collect()
-            timearray = self._printtime(timearray)
-
-    def _logging(self, *message, end='\n'):
-        localtime = time.asctime(time.localtime(time.time()))
-        print(localtime, f'MDDatasetMaker {__version__}:', *message, end=end)
+        with tempfile.TemporaryDirectory() as self.trajatom_dir:
+            for runstep in range(3):
+                if runstep == 0:
+                    self.bondsteplinenum = self._readlammpsbondN()
+                    self._readtimestepsbond()
+                elif runstep == 1:
+                    self.steplinenum = self._readlammpscrdN()
+                    with open(os.path.join(self.trajatom_dir, 'chooseatoms'), 'wb') as f:
+                        for bondtype in self.atombondtype:
+                            self._writecoulumbmatrix(bondtype, f)
+                            gc.collect()
+                elif runstep == 2:
+                    self._mkdir(self.dataset_dir)
+                    if self.writegjf:
+                        self._mkdir(self.gjfdir)
+                    self._writexyzfiles()
+                gc.collect()
+                timearray = self._printtime(timearray)
 
     def _produce(self, semaphore, producelist, parameter):
         for item in producelist:
@@ -94,7 +97,7 @@ class DatasetBuilder(object):
     def _printtime(self, timearray):
         timearray.append(time.time())
         if len(timearray) > 1:
-            self._logging(
+            logging.info(
                 f"Step {len(timearray)-1} Done! Time consumed (s): {timearray[-1]-timearray[-2]:.3f}")
         return timearray
 
@@ -138,8 +141,7 @@ class DatasetBuilder(object):
                 results = pool.imap_unordered(self._writestepmatrix, self._produce(semaphore, enumerate(
                     itertools.islice(itertools.zip_longest(*[f]*self.steplinenum), 0, None, self.stepinterval)), None), 10)
                 j = 0
-                for index, result in enumerate(results):
-                    self._loggingprocessing(index)
+                for result in tqdm(results, desc=trajatomfilename, total=n_atoms, unit="structure"):
                     for stepatoma, vector, symbols_counter in result:
                         stepatom[j] = stepatoma
                         for element in (symbols_counter-max_counter).elements():
@@ -152,7 +154,7 @@ class DatasetBuilder(object):
                         max_counter |= symbols_counter
                         j += 1
                     semaphore.release()
-                self._logging(
+                logging.info(
                     f"Max counter of {trajatomfilename} is {max_counter}")
             choosedindexs = self._clusterdatas(
                 np.sort(feedvector), n_clusters=self.n_clusters)
@@ -161,6 +163,7 @@ class DatasetBuilder(object):
             choosedindexs = range(n_atoms)
         fc.write(self._compress(';'.join((' '.join((str(x)
                                                     for x in stepatom[index])) for index in choosedindexs))))
+        self._nstructure += len(choosedindexs)
 
     def _writestepmatrix(self, item):
         (step, _), _ = item
@@ -213,12 +216,14 @@ class DatasetBuilder(object):
         return index
 
     def _mkdir(self, path):
-        if not os.path.exists(path):
+        try:
             os.makedirs(path)
+        except OSError:
+            pass
 
     def _writexyzfiles(self):
         self.dstep = defaultdict(list)
-        with open(os.path.join(self.trajatom_dir, "chooseatoms"), 'rb') as fc, open(self.dumpfilename) as f, open(self.bondfilename) as fb, Pool(self.nproc, maxtasksperchild=10000) as pool:
+        with open(os.path.join(self.trajatom_dir, "chooseatoms"), 'rb') as fc, open(self.dumpfilename) as f, open(self.bondfilename) as fb, Pool(self.nproc, maxtasksperchild=10000) as pool, tqdm(desc="Write structures", unit="structure", total=self._nstructure) as pbar:
             semaphore = Semaphore(360)
             for typefile, trajatomfilename in zip(fc, self.atombondtype):
                 for line in self._decompress(typefile).split(";"):
@@ -231,13 +236,13 @@ class DatasetBuilder(object):
                 *[f]*self.steplinenum), 0, None, self.stepinterval), itertools.islice(itertools.zip_longest(*[fb]*self.bondsteplinenum), 0, None, self.stepinterval))), None), 10)
             for result in results:
                 for takenatoms, trajatomfilename in result:
-                    self._loggingprocessing(ii)
+                    pbar.update(1)
                     folder = str(ii//1000).zfill(3)
                     atomtypenum = str(i[trajatomfilename]).zfill(maxlength)
                     self._mkdir(os.path.join(self.dataset_dir, folder))
                     cutoffatoms = sum(takenatoms, Atoms())
                     cutoffatoms.wrap(
-                        center=cutoffatoms[0].position/cutoffatoms.get_cell_lengths_and_angles()[0:3], pbc=cutoffatoms.get_pbc())
+                        center=cutoffatoms[0].position/takenatoms[0].get_cell_lengths_and_angles()[0:3], pbc=cutoffatoms.get_pbc())
                     write_xyz(os.path.join(
                         self.dataset_dir, folder, f'{self.xyzfilename}_{trajatomfilename}_{atomtypenum}.xyz'), cutoffatoms, format='xyz')
                     if self.writegjf:
@@ -404,8 +409,7 @@ class DatasetBuilder(object):
             semaphore = Semaphore(360)
             results = pool.imap_unordered(self._readlammpsbondstep, self._produce(semaphore, enumerate(itertools.islice(
                 itertools.zip_longest(*[file]*self.bondsteplinenum), 0, None, self.stepinterval)), None), 10)
-            for index, (d, step) in enumerate(results):
-                self._loggingprocessing(index)
+            for d, step in tqdm(results, desc="Read trajectory", unit="timestep"):
                 for bondtype, atomids in d.items():
                     if not bondtype in self.atombondtype:
                         self.atombondtype.append(bondtype)
@@ -416,10 +420,6 @@ class DatasetBuilder(object):
                 semaphore.release()
         for stepatomfile in stepatomfiles.values():
             stepatomfile.close()
-
-    def _loggingprocessing(self, index):
-        if index % self.loggingfreq == 0:
-            self._logging(f"processing {index} ...", end='\r')
 
     def _compress(self, x):
         return base64.a85encode(zlib.compress(x.encode()))+b'\n'

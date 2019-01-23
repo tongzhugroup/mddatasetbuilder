@@ -8,13 +8,16 @@ import unittest
 
 from mddatasetbuilder import DatasetBuilder
 import requests
+from tqdm import tqdm
 
 
 def download_file(url, local_filename):
     # from https://stackoverflow.com/questions/16694907/how-to-download-large-file-in-python-with-requests-py
     r = requests.get(url, stream=True)
+    total_size = int(r.headers.get('content-length', 0))
+    block_size = 1024
     with open(local_filename, 'wb') as f:
-        for chunk in r.iter_content(chunk_size=1024):
+        for chunk in tqdm(r.iter_content(chunk_size=1024), total=math.ceil(total_size//block_size), unit='KB', unit_scale=True, desc=f"Downloading {local_filename}..."):
             if chunk:
                 f.write(chunk)
     return local_filename

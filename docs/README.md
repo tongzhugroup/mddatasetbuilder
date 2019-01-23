@@ -11,14 +11,14 @@ MDDatasetBuilder is a script to build molecular dynamics (MD) datasets for neura
 
 ## Requirements
 * Python 3.6
-* Python packages: [numpy](https://github.com/numpy/numpy), [scikit-learn](https://github.com/scikit-learn/scikit-learn), [ASE](https://gitlab.com/ase/ase), [GaussianRunner](https://github.com/njzjz/gaussianrunner)
+* Python packages: [numpy](https://github.com/numpy/numpy), [scikit-learn](https://github.com/scikit-learn/scikit-learn), [ASE](https://gitlab.com/ase/ase), [GaussianRunner](https://github.com/njzjz/gaussianrunner), [tqdm](https://github.com/tqdm/tqdm)
 * Software: [Gaussian 16](http://gaussian.com/), [DeePMD](https://github.com/deepmodeling/deepmd-kit)
 
 ## Installation
 
 ```sh
-$ git clone https://github.com/njzjz/MDDatasetMaker.git
-$ cd MDDatasetMaker/
+$ git clone https://github.com/njzjz/mddatasetbuilder
+$ cd mddatasetbuilder/
 $ python3 setup.py install
 ```
 
