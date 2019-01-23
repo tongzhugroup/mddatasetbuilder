@@ -52,7 +52,6 @@ class DatasetBuilder(object):
         self.atomname = atomname
         self.clusteratom = clusteratom if clusteratom else atomname
         self.atombondtype = []
-        #self.trajatom_dir = "trajatom"
         self.stepinterval = stepinterval
         self.nproc = nproc if nproc else cpu_count()
         self.cutoff = cutoff
@@ -61,7 +60,6 @@ class DatasetBuilder(object):
         self.gjfdir = f'{self.dataset_dir}_gjf'
         self.qmkeywords = qmkeywords
         self.pbc = pbc
-        self.loggingfreq = 1000
         self.fragment = fragment
         self._coulumbdiag = dict(
             ((symbol, atomic_numbers[symbol]**2.4/2) for symbol in atomname))
@@ -141,7 +139,7 @@ class DatasetBuilder(object):
                 results = pool.imap_unordered(self._writestepmatrix, self._produce(semaphore, enumerate(
                     itertools.islice(itertools.zip_longest(*[f]*self.steplinenum), 0, None, self.stepinterval)), None), 10)
                 j = 0
-                for result in tqdm(results, desc=trajatomfilename, total=n_atoms, unit="structure"):
+                for result in tqdm(results, desc=trajatomfilename, total=self._nstep, unit="timestep"):
                     for stepatoma, vector, symbols_counter in result:
                         stepatom[j] = stepatoma
                         for element in (symbols_counter-max_counter).elements():
@@ -409,6 +407,7 @@ class DatasetBuilder(object):
             semaphore = Semaphore(360)
             results = pool.imap_unordered(self._readlammpsbondstep, self._produce(semaphore, enumerate(itertools.islice(
                 itertools.zip_longest(*[file]*self.bondsteplinenum), 0, None, self.stepinterval)), None), 10)
+            step = 0
             for d, step in tqdm(results, desc="Read trajectory", unit="timestep"):
                 for bondtype, atomids in d.items():
                     if not bondtype in self.atombondtype:
@@ -418,6 +417,7 @@ class DatasetBuilder(object):
                     stepatomfiles[bondtype].write(self._compress(
                         ''.join((str(step), ' ', ','.join((str(x) for x in atomids)), '\n'))))
                 semaphore.release()
+            self._nstep = step
         for stepatomfile in stepatomfiles.values():
             stepatomfile.close()
 
