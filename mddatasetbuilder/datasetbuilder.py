@@ -131,7 +131,7 @@ class DatasetBuilder(object):
         if n_atoms > self.n_clusters:
             # undersampling
             max_counter = Counter()
-            stepatom = np.zeros((n_atoms, 2), dtype=np.int8)
+            stepatom = np.zeros((n_atoms, 2), dtype=np.int32)
             feedvector = np.zeros((n_atoms, 0))
             vector_elements = defaultdict(list)
             with open(self.dumpfilename) as f, Pool(self.nproc, maxtasksperchild=10000) as pool:
