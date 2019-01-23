@@ -417,7 +417,7 @@ class DatasetBuilder(object):
                     stepatomfiles[bondtype].write(self._compress(
                         ''.join((str(step), ' ', ','.join((str(x) for x in atomids)), '\n'))))
                 semaphore.release()
-            self._nstep = step
+            self._nstep = step+1
         for stepatomfile in stepatomfiles.values():
             stepatomfile.close()
 
