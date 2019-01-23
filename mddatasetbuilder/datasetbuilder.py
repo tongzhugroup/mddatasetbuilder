@@ -438,13 +438,13 @@ def _commandline():
     parser.add_argument(
         '-a', '--atomname', help='Atomic names in the trajectory, e.g. C H O', nargs='*', required=True)
     parser.add_argument(
-        '-np', '--nproc', help='Number of processes')
+        '-np', '--nproc', help='Number of processes', type=int)
     parser.add_argument(
-        '-c', '--cutoff', help='Cutoff radius (default is 5.0)', default=5.)
+        '-c', '--cutoff', help='Cutoff radius (default is 5.0)', type=float, default=5.)
     parser.add_argument(
-        '-i', '--interval', help='Step interval (default is 1)', default=1)
+        '-i', '--interval', help='Step interval (default is 1)', type=int, default=1)
     parser.add_argument(
-        '-s', '--size', help='Dataset size (default is 10,000)', default=10000)
+        '-s', '--size', help='Dataset size (default is 10,000)', type=int, default=10000)
     parser.add_argument(
         '-k', '--qmkeywords', help='QM keywords (default is %%nproc=4 #mn15/6-31g**)', default="%nproc=4\n#mn15/6-31g**")
     parser.add_argument(
