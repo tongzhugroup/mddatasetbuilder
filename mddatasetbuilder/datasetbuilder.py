@@ -52,7 +52,6 @@ class DatasetBuilder(object):
         self.atomname = atomname
         self.clusteratom = clusteratom if clusteratom else atomname
         self.atombondtype = []
-        #self.trajatom_dir = "trajatom"
         self.stepinterval = stepinterval
         self.nproc = nproc if nproc else cpu_count()
         self.cutoff = cutoff
@@ -61,7 +60,6 @@ class DatasetBuilder(object):
         self.gjfdir = f'{self.dataset_dir}_gjf'
         self.qmkeywords = qmkeywords
         self.pbc = pbc
-        self.loggingfreq = 1000
         self.fragment = fragment
         self._coulumbdiag = dict(
             ((symbol, atomic_numbers[symbol]**2.4/2) for symbol in atomname))
