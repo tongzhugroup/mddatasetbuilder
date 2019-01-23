@@ -407,7 +407,7 @@ class DatasetBuilder(object):
             semaphore = Semaphore(360)
             results = pool.imap_unordered(self._readlammpsbondstep, self._produce(semaphore, enumerate(itertools.islice(
                 itertools.zip_longest(*[file]*self.bondsteplinenum), 0, None, self.stepinterval)), None), 10)
-            step = 0
+            nstep = 0
             for d, step in tqdm(results, desc="Read trajectory", unit="timestep"):
                 for bondtype, atomids in d.items():
                     if not bondtype in self.atombondtype:
@@ -417,7 +417,8 @@ class DatasetBuilder(object):
                     stepatomfiles[bondtype].write(self._compress(
                         ''.join((str(step), ' ', ','.join((str(x) for x in atomids)), '\n'))))
                 semaphore.release()
-            self._nstep = step+1
+                nstep += 1
+            self._nstep = nstep
         for stepatomfile in stepatomfiles.values():
             stepatomfile.close()
 
