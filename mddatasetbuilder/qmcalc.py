@@ -6,7 +6,7 @@ from gaussianrunner import GaussianRunner
 
 
 def qmcalc(gjfdir, command='g16'):
-    gjflist = [filename for filename in os.listdir(gjfdir)]
+    gjflist = [os.path.join(gjfdir,filename) for filename in os.listdir(gjfdir) if filename.endswith('.gjf')]
     GaussianRunner(command=command).runGaussianInParallel('GJF', gjflist)
 
 
