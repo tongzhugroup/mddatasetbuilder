@@ -38,13 +38,13 @@ class PrepareDeePMD(object):
     def praparedeepmdforLOG(self, logfilename):
         read_properties = GaussianAnalyst(properties=[
             'energy', 'atomic_number', 'coordinate', 'force']).readFromLOG(logfilename)
-        if None in read_properties.values():
-            return
-        energy = read_properties['energy'] * Hartree/eV
+        energy = read_properties['energy'] 
         atomic_number = read_properties['atomic_number']
         coord = read_properties['coordinate']
-        force = read_properties['force'] * (Hartree/Bohr)/(eV/Ang)
+        force = read_properties['force']
         if energy is not None and atomic_number is not None and coord is not None and force is not None:
+            energy *= Hartree/eV
+            force *= (Hartree/Bohr)/(eV/Ang)
             id_sorted = np.argsort(atomic_number)
             n_ele = Counter(atomic_number)
             name = "".join(
