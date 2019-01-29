@@ -77,7 +77,6 @@ class DatasetBuilder(object):
         with tempfile.TemporaryDirectory() as self.trajatom_dir:
             for runstep in range(3):
                 if runstep == 0:
-                    self.bondsteplinenum = self._readlammpsbondN()
                     self._readtimestepsbond()
                 elif runstep == 1:
                     self.steplinenum = self._readlammpscrdN()
@@ -371,24 +370,23 @@ class DatasetBuilder(object):
                 results.append((takenatoms, trajatomfilename))
         return results
 
-    def _readlammpsbondN(self):
+    def _readlammpsbondN(self, f):
         # copy from reacnetgenerator on 2018-12-15
-        with open(self.bondfilename) as file:
-            iscompleted = False
-            for index, line in enumerate(file):
-                if line.startswith("#"):
-                    if line.startswith("# Number of particles"):
-                        if iscompleted:
-                            stepbindex = index
-                            break
-                        else:
-                            iscompleted = True
-                            stepaindex = index
-                        N = [int(s) for s in line.split() if s.isdigit()][0]
-                        atomtype = np.zeros(N, dtype=np.int)
-                else:
-                    s = line.split()
-                    atomtype[int(s[0])-1] = int(s[1])
+        iscompleted = False
+        for index, line in enumerate(f):
+            if line.startswith("#"):
+                if line.startswith("# Number of particles"):
+                    if iscompleted:
+                        stepbindex = index
+                        break
+                    else:
+                        iscompleted = True
+                        stepaindex = index
+                    N = [int(s) for s in line.split() if s.isdigit()][0]
+                    atomtype = np.zeros(N, dtype=np.int)
+            else:
+                s = line.split()
+                atomtype[int(s[0])-1] = int(s[1])
         steplinenum = stepbindex-stepaindex
         self._N = N
         self.atomtype = atomtype
@@ -464,7 +462,9 @@ class DatasetBuilder(object):
         # added on 2018-12-15
         stepatomfiles = {}
         self._mkdir(self.trajatom_dir)
-        with open(self.bondfilename) as file, Pool(self.nproc, maxtasksperchild=10000) as pool:
+        with open(self.bondfilename) as f, Pool(self.nproc, maxtasksperchild=10000) as pool:
+            self.bondsteplinenum = self._readlammpsbondN(f)
+            f.seek(0)
             semaphore = Semaphore(360)
             results = pool.imap_unordered(
                 self._readlammpsbondstep, self._produce(
@@ -472,7 +472,7 @@ class DatasetBuilder(object):
                     enumerate(
                         itertools.islice(
                             itertools.zip_longest(
-                                *[file] * self.bondsteplinenum),
+                                *[f] * self.bondsteplinenum),
                             0, None, self.stepinterval)),
                     None),
                 100)
