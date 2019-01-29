@@ -468,10 +468,19 @@ class DatasetBuilder(object):
         self._mkdir(self.trajatom_dir)
         with open(self.bondfilename) as file, Pool(self.nproc, maxtasksperchild=1000) as pool:
             semaphore = Semaphore(360)
-            results = pool.imap_unordered(self._readlammpsbondstep, self._produce(semaphore, enumerate(itertools.islice(
-                itertools.zip_longest(*[file]*self.bondsteplinenum), 0, None, self.stepinterval)), None), 10)
+            results = pool.imap_unordered(
+                self._readlammpsbondstep, self._produce(
+                    semaphore,
+                    enumerate(
+                        itertools.islice(
+                            itertools.zip_longest(
+                                *[file] * self.bondsteplinenum),
+                            0, None, self.stepinterval)),
+                    None),
+                10)
             nstep = 0
-            for d, step in tqdm(results, desc="Read trajectory", unit="timestep"):
+            for d, step in tqdm(
+                    results, desc="Read trajectory", unit="timestep"):
                 for bondtype, atomids in d.items():
                     if not bondtype in self.atombondtype:
                         self.atombondtype.append(bondtype)
@@ -505,11 +514,14 @@ def _commandline():
     parser.add_argument(
         '-np', '--nproc', help='Number of processes', type=int)
     parser.add_argument(
-        '-c', '--cutoff', help='Cutoff radius (default is 5.0)', type=float, default=5.)
+        '-c', '--cutoff', help='Cutoff radius (default is 5.0)', type=float,
+        default=5.)
     parser.add_argument(
-        '-i', '--interval', help='Step interval (default is 1)', type=int, default=1)
+        '-i', '--interval', help='Step interval (default is 1)', type=int,
+        default=1)
     parser.add_argument(
-        '-s', '--size', help='Dataset size (default is 10,000)', type=int, default=10000)
+        '-s', '--size', help='Dataset size (default is 10,000)', type=int,
+        default=10000)
     parser.add_argument(
         '-k', '--qmkeywords',
         help='QM keywords (default is %%nproc=4 #mn15/6-31g**)',
