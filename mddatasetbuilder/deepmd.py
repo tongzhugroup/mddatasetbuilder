@@ -13,10 +13,13 @@ from gaussianrunner import GaussianAnalyst
 
 
 class PrepareDeePMD(object):
+    """Prepare DeePMD training files."""
+
     def __init__(
             self, data_path, atomname, deepmd_dir="data",
             jsonfilename=os.path.join("train", "train.json"),
             lattice="100 0 0 0 100 0 0 0 100", virial="0 0 0 0 0 0 0 0 0"):
+        """Init the class."""
         self.data_path = data_path
         self.atomname = atomname
         self.deepmd_dir = deepmd_dir
@@ -29,17 +32,18 @@ class PrepareDeePMD(object):
         self.jsonfilename = jsonfilename
 
     def praparedeepmd(self):
-        self.searchpath()
-        self.raw2np()
-        self.writejson()
+        """Prepare the dataset."""
+        self._searchpath()
+        self._raw2np()
+        self._writejson()
 
-    def searchpath(self):
+    def _searchpath(self):
         for root, _, files in os.walk(self.data_path):
             for logfile in files:
                 if logfile.endswith(".log"):
-                    self.praparedeepmdforLOG(os.path.join(root, logfile))
+                    self._praparedeepmdforLOG(os.path.join(root, logfile))
 
-    def praparedeepmdforLOG(self, logfilename):
+    def _praparedeepmdforLOG(self, logfilename):
         read_properties = GaussianAnalyst(properties=[
             'energy', 'atomic_number', 'coordinate', 'force']).readFromLOG(logfilename)
         energy = read_properties['energy']
@@ -73,7 +77,7 @@ class PrepareDeePMD(object):
                 boxfile.write(self.lattcie)
                 virialfile.write(self.virial)
 
-    def raw2np(self):
+    def _raw2np(self):
         for i, system_path in enumerate(self.system_paths):
             if not os.path.exists(os.path.join(system_path, self.setdir)):
                 os.makedirs(os.path.join(system_path, self.setdir))
@@ -90,7 +94,7 @@ class PrepareDeePMD(object):
                     np.save(os.path.join(
                         system_path, self.setdir, dataname), data)
 
-    def writejson(self):
+    def _writejson(self):
         jsonpath = os.path.split(self.jsonfilename)[0]
         sel_a = [{"C": 40, "H": 80, "O": 40}.get(
             symbol, 40) for symbol in self.atomname]

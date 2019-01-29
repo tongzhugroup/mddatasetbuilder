@@ -1,6 +1,7 @@
-'''Test 
+"""Test.
+
 python setup.py test
-'''
+"""
 
 
 import json
@@ -8,6 +9,7 @@ import logging
 import math
 import os
 import unittest
+import hashlib
 
 import pkg_resources
 import requests
@@ -17,7 +19,10 @@ import mddatasetbuilder
 
 
 class TestMDDatasetBuilder(unittest.TestCase):
+    """Test MDDatasetBuilder."""
+
     def test_datasetbuilder(self):
+        """Test DatasetBuilder."""
         logging.info(self.test_datasetbuilder.__doc__)
         testparms = json.load(
             pkg_resources.resource_stream(__name__, 'test.json'))

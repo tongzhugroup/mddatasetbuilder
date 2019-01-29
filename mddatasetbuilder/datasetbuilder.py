@@ -1,6 +1,7 @@
-''' MDDatasetBuilder
+"""MDDatasetBuilder.
+
 Run 'datasetbuilder -h' for more details.
-'''
+"""
 
 __author__ = "Jinzhe Zeng"
 __email__ = "jzzeng@stu.ecnu.edu.cn"
@@ -14,7 +15,6 @@ import gc
 import itertools
 import logging
 import os
-import shutil
 import tempfile
 import time
 import zlib
@@ -36,12 +36,10 @@ except DistributionNotFound:
     # package is not installed
     pass
 
-logging.basicConfig(
-    format=f'%(asctime)s - MDDatasetBuilder {__version__} - %(levelname)s: %(message)s',
-    level=logging.INFO)
-
 
 class DatasetBuilder(object):
+    """Dataset Builder."""
+
     def __init__(
             self, atomname=["C", "H", "O"],
             clusteratom=None, bondfilename="bonds.reaxc",
@@ -49,6 +47,7 @@ class DatasetBuilder(object):
             stepinterval=1, n_clusters=10000,
             qmkeywords="%nproc=4\n#mn15/6-31g(d,p)", nproc=None, pbc=True,
             fragment=True):
+        """Init the builder."""
         print(__doc__)
         print(f"Author:{__author__}  Email:{__email__}")
         self.dumpfilename = dumpfilename
@@ -72,6 +71,7 @@ class DatasetBuilder(object):
         self._nstructure = 0
 
     def builddataset(self, writegjf=True):
+        """Build a dataset."""
         self.writegjf = writegjf
         timearray = self._printtime([])
         with tempfile.TemporaryDirectory() as self.trajatom_dir:
@@ -485,7 +485,7 @@ class DatasetBuilder(object):
             for d, step in tqdm(
                     results, desc="Read trajectory", unit="timestep"):
                 for bondtype, atomids in d.items():
-                    if not bondtype in self.atombondtype:
+                    if bondtype not in self.atombondtype:
                         self.atombondtype.append(bondtype)
                         stepatomfiles[bondtype] = open(os.path.join(
                             self.trajatom_dir, f'stepatom.{bondtype}'), 'wb')

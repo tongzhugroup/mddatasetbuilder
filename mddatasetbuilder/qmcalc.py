@@ -1,4 +1,4 @@
-'''QM calculation with Gaussian'''
+"""QM calculation with Gaussian."""
 
 import argparse
 import os
@@ -7,6 +7,7 @@ from gaussianrunner import GaussianRunner
 
 
 def qmcalc(gjfdir, command='g16'):
+    """QM Calculation."""
     gjflist = [os.path.join(gjfdir, filename) for filename in os.listdir(
         gjfdir) if filename.endswith('.gjf')]
     GaussianRunner(command=command).runGaussianInParallel('GJF', gjflist)
