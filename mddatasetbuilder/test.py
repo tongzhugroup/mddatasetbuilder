@@ -35,10 +35,10 @@ class TestMDDatasetBuilder(unittest.TestCase):
                                 fileparms["sha256"])
 
         d = mddatasetbuilder.DatasetBuilder(
-            bondfilename=os.join(
+            bondfilename=os.path.join(
                 testparms["folder"],
                 testparms["bondfile"]["filename"]),
-            dumpfilename=os.join(
+            dumpfilename=os.path.join(
                 testparms["folder"],
                 testparms["dumpfile"]["filename"]),
             atomname=["H", "O"],
