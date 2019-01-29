@@ -1,7 +1,8 @@
 '''QM calculation with Gaussian'''
 
-import os
 import argparse
+import os
+
 from gaussianrunner import GaussianRunner
 
 

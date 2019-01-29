@@ -8,6 +8,7 @@ from collections import Counter
 import numpy as np
 from ase.data import atomic_numbers, chemical_symbols
 from ase.units import Ang, Bohr, Hartree, eV
+
 from gaussianrunner import GaussianAnalyst
 
 
@@ -41,7 +42,7 @@ class PrepareDeePMD(object):
     def praparedeepmdforLOG(self, logfilename):
         read_properties = GaussianAnalyst(properties=[
             'energy', 'atomic_number', 'coordinate', 'force']).readFromLOG(logfilename)
-        energy = read_properties['energy'] 
+        energy = read_properties['energy']
         atomic_number = read_properties['atomic_number']
         coord = read_properties['coordinate']
         force = read_properties['force']

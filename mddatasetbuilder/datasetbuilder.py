@@ -12,21 +12,20 @@ import argparse
 import base64
 import gc
 import itertools
-import os
 import logging
-import tempfile
+import os
 import shutil
+import tempfile
 import time
 import zlib
 from collections import Counter, defaultdict
 from multiprocessing import Pool, Semaphore, cpu_count
 
-from pkg_resources import DistributionNotFound, get_distribution
-
 import numpy as np
 from ase import Atom, Atoms
 from ase.data import atomic_numbers
 from ase.io import write as write_xyz
+from pkg_resources import DistributionNotFound, get_distribution
 from sklearn import preprocessing
 from sklearn.cluster import MiniBatchKMeans
 from tqdm import tqdm
