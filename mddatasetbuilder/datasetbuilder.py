@@ -155,7 +155,7 @@ class DatasetBuilder(object):
                                     *[f] * self.steplinenum),
                                 0, None, self.stepinterval)),
                         None),
-                    10)
+                    100)
                 j = 0
                 for result in tqdm(
                         results, desc=trajatomfilename, total=self._nstep,
@@ -183,8 +183,10 @@ class DatasetBuilder(object):
                     semaphore.release()
                 logging.info(
                     f"Max counter of {trajatomfilename} is {max_counter}")
+            pool.close()
             choosedindexs = self._clusterdatas(
                 np.sort(feedvector), n_clusters=self.n_clusters)
+            pool.join()
         else:
             stepatom = [(u, vv) for u, v in self.dstep.items() for vv in v]
             choosedindexs = range(n_atoms)
@@ -276,7 +278,7 @@ class DatasetBuilder(object):
                                     *[fb] * self.bondsteplinenum),
                                 0, None, self.stepinterval))),
                     None),
-                10)
+                100)
             for result in results:
                 for takenatoms, trajatomfilename in result:
                     pbar.update(1)
@@ -303,6 +305,8 @@ class DatasetBuilder(object):
                     i[trajatomfilename] += 1
                     ii += 1
                 semaphore.release()
+            pool.close()
+            pool.join()
 
     def _convertgjf(self, gjffilename, selected_atoms):
         buff = []
@@ -466,7 +470,7 @@ class DatasetBuilder(object):
         # added on 2018-12-15
         stepatomfiles = {}
         self._mkdir(self.trajatom_dir)
-        with open(self.bondfilename) as file, Pool(self.nproc, maxtasksperchild=1000) as pool:
+        with open(self.bondfilename) as file, Pool(self.nproc, maxtasksperchild=10000) as pool:
             semaphore = Semaphore(360)
             results = pool.imap_unordered(
                 self._readlammpsbondstep, self._produce(
@@ -477,7 +481,7 @@ class DatasetBuilder(object):
                                 *[file] * self.bondsteplinenum),
                             0, None, self.stepinterval)),
                     None),
-                10)
+                100)
             nstep = 0
             for d, step in tqdm(
                     results, desc="Read trajectory", unit="timestep"):
@@ -490,9 +494,11 @@ class DatasetBuilder(object):
                         ''.join((str(step), ' ', ','.join((str(x) for x in atomids)), '\n'))))
                 semaphore.release()
                 nstep += 1
-            self._nstep = nstep
+        pool.close()
+        self._nstep = nstep
         for stepatomfile in stepatomfiles.values():
             stepatomfile.close()
+        pool.join()
 
     def _compress(self, x):
         return base64.a85encode(zlib.compress(x.encode()))+b'\n'
