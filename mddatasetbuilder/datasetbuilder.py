@@ -73,7 +73,7 @@ class DatasetBuilder(object):
     def builddataset(self, writegjf=True):
         """Build a dataset."""
         self.writegjf = writegjf
-        timearray = self._printtime([])
+        timearray = [time.time()]
         with tempfile.TemporaryDirectory() as self.trajatom_dir:
             for runstep in range(3):
                 if runstep == 0:
@@ -91,19 +91,14 @@ class DatasetBuilder(object):
                         self._mkdir(self.gjfdir)
                     self._writexyzfiles()
                 gc.collect()
-                timearray = self._printtime(timearray)
+                timearray.append(time.time())
+                logging.info(
+                    f"Step {len(timearray)-1} Done! Time consumed (s): {timearray[-1]-timearray[-2]:.3f}")
 
     def _produce(self, semaphore, producelist, parameter):
         for item in producelist:
             semaphore.acquire()
             yield item, parameter
-
-    def _printtime(self, timearray):
-        timearray.append(time.time())
-        if len(timearray) > 1:
-            logging.info(
-                f"Step {len(timearray)-1} Done! Time consumed (s): {timearray[-1]-timearray[-2]:.3f}")
-        return timearray
 
     def _readlammpscrdstep(self, item):
         (_, lines), _ = item
