@@ -8,11 +8,18 @@ from collections import Counter
 import numpy as np
 from ase.data import atomic_numbers, chemical_symbols
 from ase.units import Ang, Bohr, Hartree, eV
+
 from gaussianrunner import GaussianAnalyst
 
 
 class PrepareDeePMD(object):
-    def __init__(self, data_path, atomname, deepmd_dir="data", jsonfilename=os.path.join("train", "train.json"), lattice="100 0 0 0 100 0 0 0 100", virial="0 0 0 0 0 0 0 0 0"):
+    """Prepare DeePMD training files."""
+
+    def __init__(
+            self, data_path, atomname, deepmd_dir="data",
+            jsonfilename=os.path.join("train", "train.json"),
+            lattice="100 0 0 0 100 0 0 0 100", virial="0 0 0 0 0 0 0 0 0"):
+        """Init the class."""
         self.data_path = data_path
         self.atomname = atomname
         self.deepmd_dir = deepmd_dir
@@ -25,36 +32,42 @@ class PrepareDeePMD(object):
         self.jsonfilename = jsonfilename
 
     def praparedeepmd(self):
-        self.searchpath()
-        self.raw2np()
-        self.writejson()
+        """Prepare the dataset."""
+        self._searchpath()
+        self._raw2np()
+        self._writejson()
 
-    def searchpath(self):
+    def _searchpath(self):
         for root, _, files in os.walk(self.data_path):
             for logfile in files:
                 if logfile.endswith(".log"):
-                    self.praparedeepmdforLOG(os.path.join(root, logfile))
+                    self._praparedeepmdforLOG(os.path.join(root, logfile))
 
-    def praparedeepmdforLOG(self, logfilename):
+    def _praparedeepmdforLOG(self, logfilename):
         read_properties = GaussianAnalyst(properties=[
             'energy', 'atomic_number', 'coordinate', 'force']).readFromLOG(logfilename)
-        energy = read_properties['energy'] * Hartree/eV
+        energy = read_properties['energy']
         atomic_number = read_properties['atomic_number']
         coord = read_properties['coordinate']
-        force = read_properties['force'] * (Hartree/Bohr)/(eV/Ang)
+        force = read_properties['force']
         if energy is not None and atomic_number is not None and coord is not None and force is not None:
+            energy *= Hartree/eV
+            force *= (Hartree/Bohr)/(eV/Ang)
             id_sorted = np.argsort(atomic_number)
             n_ele = Counter(atomic_number)
             name = "".join(
-                [f"{symbol}{n_ele[atomic_numbers[symbol]]}" for symbol in self.atomname])
+                [f"{symbol}{n_ele[atomic_numbers[symbol]]}"
+                 for symbol in self.atomname])
             path = os.path.join(self.deepmd_dir, f"data_{name}")
             if not os.path.exists(path):
                 os.makedirs(path)
                 self.system_paths.append(path)
                 self.batch_size.append(max(32//atomic_number.size, 1))
                 with open(os.path.join(path, "type.raw"), 'w') as typefile:
-                    typefile.write(" ".join((str(self.atomname.index(chemical_symbols[x]))
-                                             for x in np.sort(atomic_number))))
+                    typefile.write(
+                        " ".join(
+                            (str(self.atomname.index(chemical_symbols[x]))
+                             for x in np.sort(atomic_number))))
             with open(os.path.join(path, "coord.raw"), 'a') as coordfile, open(os.path.join(path, "force.raw"), 'a') as forcefile, open(os.path.join(path, "energy.raw"), 'a') as energyfile, open(os.path.join(path, "box.raw"), 'a') as boxfile, open(os.path.join(path, "virial.raw"), 'a') as virialfile:
                 coordfile.write(
                     f"{' '.join((str(x) for x in coord[id_sorted].flatten()))}\n")
@@ -64,12 +77,13 @@ class PrepareDeePMD(object):
                 boxfile.write(self.lattcie)
                 virialfile.write(self.virial)
 
-    def raw2np(self):
+    def _raw2np(self):
         for i, system_path in enumerate(self.system_paths):
             if not os.path.exists(os.path.join(system_path, self.setdir)):
                 os.makedirs(os.path.join(system_path, self.setdir))
             for dataname in ["box", "coord", "energy", "force", "virial"]:
-                if os.path.isfile(os.path.join(system_path, f"{dataname}.raw")):
+                if os.path.isfile(
+                        os.path.join(system_path, f"{dataname}.raw")):
                     data = np.loadtxt(os.path.join(
                         system_path, f"{dataname}.raw"))
                     if data.ndim == 1 and not dataname == "energy":
@@ -80,7 +94,7 @@ class PrepareDeePMD(object):
                     np.save(os.path.join(
                         system_path, self.setdir, dataname), data)
 
-    def writejson(self):
+    def _writejson(self):
         jsonpath = os.path.split(self.jsonfilename)[0]
         sel_a = [{"C": 40, "H": 80, "O": 40}.get(
             symbol, 40) for symbol in self.atomname]
@@ -96,7 +110,7 @@ class PrepareDeePMD(object):
             "fitting_resnet_dt": True,
             "coord_norm":       True,
             "type_fitting_net": False,
-            "systems":          [os.path.relpath(path,jsonpath) for path in self.system_paths],
+            "systems":          [os.path.relpath(path, jsonpath) for path in self.system_paths],
             "set_prefix":       self.set_prefix,
             "stop_batch":       4000000,
             "batch_size":       self.batch_size,
@@ -130,10 +144,12 @@ def _commandline():
     parser = argparse.ArgumentParser(description='Prepare DeePMD data')
     parser.add_argument('-d', '--dir',
                         help='Dataset dirs, default is data', default="data")
-    parser.add_argument('-p', '--path',
-                        help='Gaussian LOG file path, e.g. dataset_md_GJF', required=True)
     parser.add_argument(
-        '-a', '--atomname', help='Atomic names in the trajectory, e.g. C H O', nargs='*', required=True)
+        '-p', '--path', help='Gaussian LOG file path, e.g. dataset_md_GJF',
+        required=True)
+    parser.add_argument('-a', '--atomname',
+                        help='Atomic names in the trajectory, e.g. C H O',
+                        nargs='*', required=True)
     args = parser.parse_args()
     PrepareDeePMD(data_path=args.path, deepmd_dir=args.dir,
                   atomname=args.atomname).praparedeepmd()
