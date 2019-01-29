@@ -14,7 +14,7 @@ if __name__ == '__main__':
           author_email='jzzeng@stu.ecnu.edu.cn',
           packages=['mddatasetbuilder'],
           install_requires=['numpy', 'scikit-learn', 'ase',
-                           'gaussianrunner', 'tqdm', 'coloredlogs'
+                            'gaussianrunner', 'tqdm', 'coloredlogs'
                             ],
           entry_points={
               'console_scripts': ['datasetbuilder=mddatasetbuilder.datasetbuilder:_commandline',
