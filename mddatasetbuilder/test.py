@@ -3,56 +3,98 @@ python setup.py test
 '''
 
 
-import os
+import json
+import logging
 import math
+import os
 import unittest
 
-from mddatasetbuilder import DatasetBuilder
+import pkg_resources
 import requests
 from tqdm import tqdm
 
-
-def download_file(url, local_filename):
-    # from https://stackoverflow.com/questions/16694907
-    r = requests.get(url, stream=True)
-    total_size = int(r.headers.get('content-length', 0))
-    block_size = 1024
-    with open(local_filename, 'wb') as f:
-        for chunk in tqdm(
-                r.iter_content(chunk_size=1024),
-                total=math.ceil(total_size // block_size),
-                unit='KB', unit_scale=True,
-                desc=f"Downloading {local_filename}..."):
-            if chunk:
-                f.write(chunk)
-    return local_filename
+import mddatasetbuilder
 
 
-class TestReacNetGen(unittest.TestCase):
-    def test_reacnetgen(self):
+class TestMDDatasetBuilder(unittest.TestCase):
+    def test_datasetbuilder(self):
+        logging.info(self.test_datasetbuilder.__doc__)
+        testparms = json.load(
+            pkg_resources.resource_stream(__name__, 'test.json'))
         # download bonds.reaxc and dump.reaxc
-        bondfile_url = "https://drive.google.com/uc?authuser=0&id=1CJ22BZTh2Bg3MynHyk_CVZl0rcpSQzRn&export=download"
-        dumpfile_url = "https://drive.google.com/uc?authuser=0&id=1-MZZEpTj71JJn4JfKPh5yb_lD2V7NS-Y&export=download"
-        folder = "test"
-        bondfile = "bonds.reaxc"
-        dumpfile = "dump.reaxc"
-        bondfilename = os.path.join(folder, bondfile)
-        dumpfilename = os.path.join(folder, dumpfile)
+        for fileparms in (testparms["bondfile"], testparms["dumpfile"]):
+            self._download_file(fileparms["url"],
+                                os.path.join(
+                                    testparms["folder"],
+                                    fileparms["filename"]),
+                                fileparms["sha256"])
 
-        if not os.path.exists(folder):
-            os.makedirs(folder)
-        print(f"Downloading {bondfile} ...")
-        download_file(bondfile_url, bondfilename)
-        print(f"Downloading {dumpfile} ...")
-        download_file(dumpfile_url, dumpfilename)
-
-        d = DatasetBuilder(
+        d = mddatasetbuilder.DatasetBuilder(
             bondfilename=bondfilename, dumpfilename=dumpfilename,
             atomname=["H", "O"],
             dataset_name="h2")
         d.builddataset()
 
         self.assertTrue(os.path.exists(d.gjfdir))
+
+    def _download_file(self, urls, pathfilename, sha256):
+        times = 0
+        # download if not exists
+        while times < 3:
+            if os.path.isfile(pathfilename) and self._checksha256(
+                    pathfilename, sha256):
+                break
+            try:
+                os.makedirs(os.path.split(pathfilename)[0])
+            except OSError:
+                pass
+
+            # from https://stackoverflow.com/questions/16694907
+            if not isinstance(urls, list):
+                urls = [urls]
+            for url in urls:
+                try:
+                    logging.info(f"Try to download {pathfilename} from {url}")
+                    r = requests.get(url, stream=True)
+                    break
+                except requests.exceptions.RequestException as e:
+                    logging.warning(e)
+                    logging.warning("Request Error.")
+            else:
+                logging.error(f"Cannot download {pathfilename}.")
+                raise IOError(f"Cannot download {pathfilename}.")
+
+            total_size = int(r.headers.get('content-length', 0))
+            block_size = 1024
+            with open(pathfilename, 'wb') as f:
+                for chunk in tqdm(
+                        r.iter_content(chunk_size=1024),
+                        total=math.ceil(total_size // block_size),
+                        unit='KB', unit_scale=True,
+                        desc=f"Downloading {pathfilename}..."):
+                    if chunk:
+                        f.write(chunk)
+        else:
+            logging.error(f"Retry too much times.")
+            raise IOError(f"Retry too much times.")
+        return pathfilename
+
+    @staticmethod
+    def _checksha256(filename, sha256_check):
+        if not os.path.isfile(filename):
+            return
+        h = hashlib.sha256()
+        b = bytearray(128*1024)
+        mv = memoryview(b)
+        with open(filename, 'rb', buffering=0) as f:
+            for n in iter(lambda: f.readinto(mv), 0):
+                h.update(mv[:n])
+        sha256 = h.hexdigest()
+        logging.info(f"SHA256 of {filename}: {sha256}")
+        if sha256 == sha256_check:
+            return True
+        logging.warning("SHA256 is not correct.")
+        return False
 
 
 if __name__ == '__main__':
