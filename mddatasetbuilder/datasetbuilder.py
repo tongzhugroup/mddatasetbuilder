@@ -41,7 +41,7 @@ class DatasetBuilder(object):
     """Dataset Builder."""
 
     def __init__(
-            self, atomname=["C", "H", "O"],
+            self, atomname=None,
             clusteratom=None, bondfilename="bonds.reaxc",
             dumpfilename="dump.reaxc", dataset_name="md", cutoff=5,
             stepinterval=1, n_clusters=10000,
@@ -54,7 +54,7 @@ class DatasetBuilder(object):
         self.bondfilename = bondfilename
         self.dataset_dir = f"dataset_{dataset_name}"
         self.xyzfilename = dataset_name
-        self.atomname = atomname
+        self.atomname = atomname if atomname else ["C", "H", "O"]
         self.clusteratom = clusteratom if clusteratom else atomname
         self.atombondtype = []
         self.stepinterval = stepinterval
@@ -94,7 +94,8 @@ class DatasetBuilder(object):
                 logging.info(
                     f"Step {len(timearray)-1} Done! Time consumed (s): {timearray[-1]-timearray[-2]:.3f}")
 
-    def _produce(self, semaphore, producelist, parameter):
+    @classmethod
+    def _produce(cls, semaphore, producelist, parameter):
         for item in producelist:
             semaphore.acquire()
             yield item, parameter
@@ -220,7 +221,8 @@ class DatasetBuilder(object):
         top[np.isnan(top)] = 0
         return np.linalg.eigh(top)[0]
 
-    def _clusterdatas(self, X, n_clusters):
+    @classmethod
+    def _clusterdatas(cls, X, n_clusters):
         min_max_scaler = preprocessing.MinMaxScaler()
         X = np.array(min_max_scaler.fit_transform(X))
         clus = MiniBatchKMeans(n_clusters=n_clusters, init_size=(
@@ -240,7 +242,8 @@ class DatasetBuilder(object):
         index = np.array(list(chooseindex.values()))
         return index
 
-    def _mkdir(self, path):
+    @classmethod
+    def _mkdir(cls, path):
         try:
             os.makedirs(path)
         except OSError:
@@ -494,10 +497,12 @@ class DatasetBuilder(object):
             stepatomfile.close()
         pool.join()
 
-    def _compress(self, x):
+    @classmethod
+    def _compress(cls, x):
         return base64.a85encode(zlib.compress(x.encode()))+b'\n'
 
-    def _decompress(self, x):
+    @classmethod
+    def _decompress(cls, x):
         return zlib.decompress(base64.a85decode(x.strip())).decode()
 
 
