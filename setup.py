@@ -18,7 +18,6 @@ if __name__ == '__main__':
           author_email='jzzeng@stu.ecnu.edu.cn',
           packages=find_packages(),
           python_requires='~=3.6',
-          packages=['mddatasetbuilder'],
           install_requires=['numpy', 'scikit-learn', 'ase',
                             'gaussianrunner', 'tqdm', 'coloredlogs'
                             ],
