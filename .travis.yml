@@ -6,7 +6,7 @@ matrix:
       dist: xenial
       sudo: true
 install:
-  - python setup.py install
+  - pip install tox-travis
 
 script:
-  - python setup.py test
+  - tox

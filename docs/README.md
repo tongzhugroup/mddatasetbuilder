@@ -24,13 +24,12 @@ MDDatasetBuilder is a script to build molecular dynamics (MD) datasets for neura
 
 ```sh
 git clone https://github.com/njzjz/mddatasetbuilder
-cd mddatasetbuilder/
-python3 setup.py install
+pip install mddatasetbuilder/
 ```
 
 You can test whether ReacNetGenerator is running normally:
 ```sh
-python3 setup.py test
+python3 setup.py pytest
 ```
 
 ## Simple example

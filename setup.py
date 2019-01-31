@@ -1,5 +1,9 @@
-from setuptools import setup
+"""Use 'pip install .' to install mddatasetbuilder."""
+
+
 from os import path
+
+from setuptools import find_packages, setup
 
 if __name__ == '__main__':
     this_directory = path.abspath(path.dirname(__file__))
@@ -12,6 +16,8 @@ if __name__ == '__main__':
           url='https://github.com/njzjz/mddatasetbuilder',
           author='Jinzhe Zeng',
           author_email='jzzeng@stu.ecnu.edu.cn',
+          packages=find_packages(),
+          python_requires='~=3.6',
           packages=['mddatasetbuilder'],
           install_requires=['numpy', 'scikit-learn', 'ase',
                             'gaussianrunner', 'tqdm', 'coloredlogs'
@@ -23,9 +29,9 @@ if __name__ == '__main__':
                                   ]
           },
           test_suite='mddatasetbuilder.test',
-          tests_require=['requests'],
+          tests_require=['requests', 'pytest-sugar'],
           use_scm_version=True,
-          setup_requires=['setuptools_scm'],
+          setup_requires=['setuptools_scm', 'pytest-runner'],
           long_description=long_description,
           long_description_content_type='text/markdown',
           classifiers=[
@@ -39,4 +45,5 @@ if __name__ == '__main__':
               "Topic :: Software Development :: Libraries :: Python Modules",
               "Topic :: Software Development :: Version Control :: Git",
           ],
+          zip_safe=True,
           )
