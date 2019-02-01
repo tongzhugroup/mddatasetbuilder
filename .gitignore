@@ -104,4 +104,4 @@ ENV/
 .vscode
 
 # test
-test/
+testfiles/

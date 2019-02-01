@@ -7,13 +7,7 @@ matrix:
       sudo: true
 
 install:
-  - python setup.py install
-  - pip install coveralls codecov
+  - pip install tox-travis
 
 script:
-  - coverage run --source=mddatasetbuilder setup.py test
-  - coverage combine
-
-after_success:
-  - coveralls
-  - codecov
+  - tox
