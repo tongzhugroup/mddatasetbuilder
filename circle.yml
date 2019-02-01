@@ -6,7 +6,7 @@ jobs:
     steps:
       - checkout
       - run:
-          command: pip install tox && tox
+          command: sudo pip install tox && tox
 workflows:
   version: 2.1
   test:
