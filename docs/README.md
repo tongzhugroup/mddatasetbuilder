@@ -1,8 +1,9 @@
 # MDDatasetBuilder
+
 [![python version](https://img.shields.io/pypi/pyversions/mddatasetbuilder.svg?logo=python&logoColor=white)](https://pypi.org/project/mddatasetbuilder)
 [![PyPI](https://img.shields.io/pypi/v/mddatasetbuilder.svg)](https://pypi.org/project/mddatasetbuilder)
 [![Build Status](https://travis-ci.com/njzjz/mddatasetbuilder.svg?branch=master)](https://travis-ci.com/njzjz/mddatasetbuilder)
-[![Build status](https://ci.appveyor.com/api/projects/status/g8xcvg6wjb7eg8k5?svg=true)](https://ci.appveyor.com/project/njzjz52847/mddatasetbuilder)
+[![Build status](https://ci.appveyor.com/api/projects/status/70v6eefoe8mgdjtu?svg=true)](https://ci.appveyor.com/project/jzzeng/mddatasetbuilder)
 [![Coverage Status](https://coveralls.io/repos/github/njzjz/mddatasetbuilder/badge.svg?branch=master)](https://coveralls.io/github/njzjz/mddatasetbuilder?branch=master)
 [![codecov](https://codecov.io/gh/njzjz/mddatasetbuilder/branch/master/graph/badge.svg)](https://codecov.io/gh/njzjz/mddatasetbuilder)
 [![Codacy Badge](https://api.codacy.com/project/badge/Grade/924ce85b916040079fb453785ec673f9)](https://www.codacy.com/app/jzzeng/mddatasetbuilder?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=njzjz/mddatasetbuilder&amp;utm_campaign=Badge_Grade)
@@ -24,7 +25,8 @@ MDDatasetBuilder is a script to build molecular dynamics (MD) datasets for neura
 
 ```sh
 git clone https://github.com/njzjz/mddatasetbuilder
-pip install mddatasetbuilder/
+cd mddatasetbuilder
+pip install .
 ```
 
 You can test whether ReacNetGenerator is running normally:
