@@ -5,9 +5,9 @@ Run 'datasetbuilder -h' for more details.
 
 __author__ = "Jinzhe Zeng"
 __email__ = "jzzeng@stu.ecnu.edu.cn"
-__update__ = '2019-01-13'
+__update__ = '2019-02-01'
 __date__ = '2018-07-18'
-__version__ = '1.0.12'
+__version__ = '1.1.4'
 
 import argparse
 import base64

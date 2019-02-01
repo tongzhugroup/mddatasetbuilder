@@ -41,8 +41,10 @@ class TestMDDatasetBuilder(unittest.TestCase):
             dumpfilename=os.path.join(
                 testparms["folder"],
                 testparms["dumpfile"]["filename"]),
-            atomname=["H", "O"],
-            dataset_name="h2")
+            atomname=testparms["atomname"],
+            dataset_name=testparms["dataset_name"],
+            stepinterval=testparms["stepinterval"]
+            if "stepinterval" in testparms else 1)
         d.builddataset()
 
         self.assertTrue(os.path.exists(d.gjfdir))

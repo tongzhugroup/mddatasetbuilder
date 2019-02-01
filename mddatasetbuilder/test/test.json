@@ -19,5 +19,7 @@
     "atomname": [
         "H",
         "O"
-    ]
+    ],
+    "dataset_name":"h2",
+    "stepinterval":10
 }
