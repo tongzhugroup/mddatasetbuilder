@@ -31,9 +31,9 @@ if __name__ == '__main__':
           tests_require=['requests', 'pytest-sugar'],
           use_scm_version=True,
           setup_requires=['setuptools_scm', 'pytest-runner'],
-package_data={
+          package_data={
               'mddatasetbuilder': ['test/test.json'],
-},
+          },
           long_description=long_description,
           long_description_content_type='text/markdown',
           classifiers=[
