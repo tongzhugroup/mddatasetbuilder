@@ -1,0 +1,14 @@
+environment:
+  matrix:
+    - PYTHON: "C:\\Python37"
+      TOX_ENV: "py37"
+    - PYTHON: "C:\\Python36"
+      TOX_ENV: "py36"
+
+install:
+  - "%PYTHON%/Scripts/pip install tox"
+
+build: false
+
+test_script:
+  - "%PYTHON%/Scripts/tox -e %TOX_ENV%"
