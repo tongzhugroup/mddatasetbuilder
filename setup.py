@@ -10,6 +10,7 @@ if __name__ == '__main__':
     with open(path.join(this_directory, 'docs', 'README.md'), encoding='utf-8') as f:
         long_description = f.read()
 
+    tests_require = ['requests', 'pytest-sugar', 'pytest-cov'],
     setup(name='mddatasetbuilder',
           description='A script to make molecular dynamics (MD) datasets for neural networks from given LAMMPS trajectories automatically.',
           keywords="molecular dynamics dataset",
@@ -28,7 +29,10 @@ if __name__ == '__main__':
                                   ]
           },
           test_suite='mddatasetbuilder.test',
-          tests_require=['requests', 'pytest-sugar'],
+          tests_require=tests_require,
+          extras_require={
+              "test": tests_require,
+          },
           use_scm_version=True,
           setup_requires=['setuptools_scm', 'pytest-runner'],
           package_data={
