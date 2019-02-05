@@ -1,6 +1,6 @@
 """Test.
 
-python setup.py test
+python setup.py pytest
 """
 
 
@@ -8,8 +8,8 @@ import json
 import logging
 import math
 import os
-import unittest
 import hashlib
+import tempfile
 
 import pkg_resources
 import requests
@@ -18,36 +18,32 @@ from tqdm import tqdm
 import mddatasetbuilder
 
 
-class TestMDDatasetBuilder(unittest.TestCase):
+class TestMDDatasetBuilder:
     """Test MDDatasetBuilder."""
 
     def test_datasetbuilder(self):
         """Test DatasetBuilder."""
-        logging.info(self.test_datasetbuilder.__doc__)
+        folder = tempfile.mkdtemp(prefix='testfiles-', dir='.')
+        logging.info(f'Folder: {folder}:')
+        os.chdir(folder)
         testparms = json.load(
             pkg_resources.resource_stream(__name__, 'test.json'))
         # download bonds.reaxc and dump.reaxc
         for fileparms in (testparms["bondfile"], testparms["dumpfile"]):
             self._download_file(fileparms["url"],
-                                os.path.join(
-                                    testparms["folder"],
-                                    fileparms["filename"]),
+                                fileparms["filename"],
                                 fileparms["sha256"])
 
         d = mddatasetbuilder.DatasetBuilder(
-            bondfilename=os.path.join(
-                testparms["folder"],
-                testparms["bondfile"]["filename"]),
-            dumpfilename=os.path.join(
-                testparms["folder"],
-                testparms["dumpfile"]["filename"]),
+            bondfilename=testparms["bondfile"]["filename"],
+            dumpfilename=testparms["dumpfile"]["filename"],
             atomname=testparms["atomname"],
             dataset_name=testparms["dataset_name"],
             stepinterval=testparms["stepinterval"]
             if "stepinterval" in testparms else 1)
         d.builddataset()
 
-        self.assertTrue(os.path.exists(d.gjfdir))
+        assert os.path.exists(d.gjfdir)
 
     def _download_file(self, urls, pathfilename, sha256):
         times = 0
@@ -107,7 +103,3 @@ class TestMDDatasetBuilder(unittest.TestCase):
             return True
         logging.warning("SHA256 is not correct.")
         return False
-
-
-if __name__ == '__main__':
-    unittest.main()
