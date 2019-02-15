@@ -3,7 +3,7 @@
 
 from os import path
 
-from setuptools import find_packages, setup
+from setuptools import find_packages, setup, Extension
 
 if __name__ == '__main__':
     this_directory = path.abspath(path.dirname(__file__))
@@ -35,7 +35,12 @@ if __name__ == '__main__':
               "test": tests_require,
           },
           use_scm_version=True,
-          setup_requires=['setuptools_scm', 'pytest-runner'],
+          setup_requires=[
+              'setuptools>=18.0',
+              'setuptools_scm',
+              'pytest-runner',
+              'cython',
+          ],
           package_data={
               'mddatasetbuilder': ['test/test.json'],
           },
@@ -52,4 +57,8 @@ if __name__ == '__main__':
               "Topic :: Software Development :: Version Control :: Git",
           ],
           zip_safe=True,
+          ext_modules=[
+              Extension("mddatasetbuilder.dps", sources=[
+                        "mddatasetbuilder/dps.pyx", "mddatasetbuilder/c_stack.cpp"], language="c++"),
+          ],
           )
