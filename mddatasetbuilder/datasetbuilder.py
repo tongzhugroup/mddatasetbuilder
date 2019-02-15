@@ -7,21 +7,21 @@ __author__ = "Jinzhe Zeng"
 __email__ = "jzzeng@stu.ecnu.edu.cn"
 __update__ = '2019-02-01'
 __date__ = '2018-07-18'
-__version__ = '1.1.4'
 
 import argparse
-import base64
 import gc
 import itertools
 import logging
 import os
 import tempfile
 import time
-import zlib
+import pickle
 from collections import Counter, defaultdict
 from multiprocessing import Pool, Semaphore, cpu_count
 
 import numpy as np
+import pybase64
+import lz4
 from ase import Atom, Atoms
 from ase.data import atomic_numbers
 from ase.io import write as write_xyz
@@ -34,7 +34,7 @@ try:
     __version__ = get_distribution(__name__).version
 except DistributionNotFound:
     # package is not installed
-    pass
+    __version__ = ''
 
 
 class DatasetBuilder(object):
@@ -129,8 +129,8 @@ class DatasetBuilder(object):
         self.dstep = {}
         with open(os.path.join(self.trajatom_dir, f"stepatom.{trajatomfilename}"), 'rb') as f:
             for line in f:
-                s = self._decompress(line).split()
-                self.dstep[int(s[0])] = [int(x) for x in s[1].split(",")]
+                s = self.bytestolist(line)
+                self.dstep[s[0]] = s[1]
         n_atoms = sum(len(x) for x in self.dstep.values())
         if n_atoms > self.n_clusters:
             # undersampling
@@ -184,11 +184,7 @@ class DatasetBuilder(object):
         else:
             stepatom = [(u, vv) for u, v in self.dstep.items() for vv in v]
             choosedindexs = range(n_atoms)
-        fc.write(
-            self._compress(
-                ';'.join(
-                    (' '.join((str(x) for x in stepatom[index]))
-                     for index in choosedindexs))))
+        fc.write(self.listtobytes(choosedindexs))
         self._nstructure += len(choosedindexs)
 
     def _writestepmatrix(self, item):
@@ -254,9 +250,8 @@ class DatasetBuilder(object):
         with open(os.path.join(self.trajatom_dir, "chooseatoms"), 'rb') as fc, open(self.dumpfilename) as f, open(self.bondfilename) as fb, Pool(self.nproc, maxtasksperchild=10000) as pool, tqdm(desc="Write structures", unit="structure", total=self._nstructure) as pbar:
             semaphore = Semaphore(360)
             for typefile, trajatomfilename in zip(fc, self.atombondtype):
-                for line in self._decompress(typefile).split(";"):
-                    s = line.split()
-                    self.dstep[int(s[0])].append((int(s[1]), trajatomfilename))
+                for line in self.bytestolist(typefile):
+                    self.dstep[line[0]].append((line[1], trajatomfilename))
             i = Counter()
             ii = 0
             maxlength = len(str(self.n_clusters))
@@ -487,8 +482,7 @@ class DatasetBuilder(object):
                         self.atombondtype.append(bondtype)
                         stepatomfiles[bondtype] = open(os.path.join(
                             self.trajatom_dir, f'stepatom.{bondtype}'), 'wb')
-                    stepatomfiles[bondtype].write(self._compress(
-                        ''.join((str(step), ' ', ','.join((str(x) for x in atomids)), '\n'))))
+                    stepatomfiles[bondtype].write(self.listtobytes([step, atomids]))
                 semaphore.release()
                 nstep += 1
         pool.close()
@@ -498,12 +492,29 @@ class DatasetBuilder(object):
         pool.join()
 
     @classmethod
-    def _compress(cls, x):
-        return base64.a85encode(zlib.compress(x.encode()))+b'\n'
+    def _compress(cls, x, isbytes=False):
+        """Compress the line.
+
+        This function reduces IO overhead to speed up the program.
+        """
+        if isbytes:
+            return pybase64.b64encode(lz4.frame.compress(x, compression_level=-1))+b'\n'
+        return pybase64.b64encode(lz4.frame.compress(x.encode(), compression_level=-1))+b'\n'
 
     @classmethod
-    def _decompress(cls, x):
-        return zlib.decompress(base64.a85decode(x.strip())).decode()
+    def _decompress(cls, x, isbytes=False):
+        """Decompress the line."""
+        if isbytes:
+            return lz4.frame.decompress(pybase64.b64decode(x.strip(), validate=True))
+        return lz4.frame.decompress(pybase64.b64decode(x.strip(), validate=True)).decode()
+    
+    @classmethod
+    def listtobytes(cls, x):
+        return cls._compress(pickle.dumps(x), isbytes=True)
+
+    @classmethod
+    def bytestolist(cls, x):
+        return pickle.loads(cls._decompress(x, isbytes=True))
 
 
 def _commandline():

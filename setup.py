@@ -20,7 +20,8 @@ if __name__ == '__main__':
           packages=find_packages(),
           python_requires='~=3.6',
           install_requires=['numpy', 'scikit-learn', 'ase',
-                            'gaussianrunner', 'tqdm', 'coloredlogs'
+                            'gaussianrunner', 'tqdm', 'coloredlogs',
+                            'pybase64', 'lz4',
                             ],
           entry_points={
               'console_scripts': ['datasetbuilder=mddatasetbuilder.datasetbuilder:_commandline',
