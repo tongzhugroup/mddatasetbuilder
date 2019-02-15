@@ -56,7 +56,8 @@ class DatasetBuilder(object):
         self.bondfilename = bondfilename
         self.dataset_dir = f"dataset_{dataset_name}"
         self.xyzfilename = dataset_name
-        self.atomname = atomname if atomname else ["C", "H", "O"]
+        self.atomname = np.array(
+            atomname) if atomname else np.array(["C", "H", "O"])
         self.clusteratom = clusteratom if clusteratom else atomname
         self.atombondtype = []
         self.stepinterval = stepinterval
@@ -68,9 +69,11 @@ class DatasetBuilder(object):
         self.qmkeywords = qmkeywords
         self.pbc = pbc
         self.fragment = fragment
-        self._coulumbdiag = dict(
-            ((symbol, atomic_numbers[symbol]**2.4/2) for symbol in atomname))
+        self._coulumbdiag = dict(map(lambda symbol: (
+            symbol, atomic_numbers[symbol]**2.4/2), atomname))
         self._nstructure = 0
+        self.atomnames = None
+        self.bondtyperestore = {}
 
     def builddataset(self, writegjf=True):
         """Build a dataset."""
@@ -118,7 +121,7 @@ class DatasetBuilder(object):
                             (int(s[0]),
                              Atom(
                                  self.atomname[int(s[1]) - 1],
-                                 [float(x) for x in s[2: 5]])))
+                                 tuple(map(float, s[2: 5])))))
                     elif linecontent == 2:
                         s = line.split()
                         boxsize.append(float(s[1])-float(s[0]))
@@ -133,11 +136,11 @@ class DatasetBuilder(object):
             for line in f:
                 s = self.bytestolist(line)
                 self.dstep[s[0]] = s[1]
-        n_atoms = sum(len(x) for x in self.dstep.values())
+        n_atoms = sum(map(len, self.dstep.values()))
         if n_atoms > self.n_clusters:
             # undersampling
             max_counter = Counter()
-            stepatom = np.zeros((n_atoms, 2), dtype=np.int32)
+            stepatom = np.zeros((n_atoms, 2), dtype=int)
             feedvector = np.zeros((n_atoms, 0))
             vector_elements = defaultdict(list)
             with open(self.dumpfilename) as f, Pool(self.nproc, maxtasksperchild=10000) as pool:
@@ -168,12 +171,8 @@ class DatasetBuilder(object):
                                 'constant',
                                 constant_values=(0, self._coulumbdiag
                                                  [element]))
-                        feedvector[j,
-                                   sum(
-                                       [vector_elements[symbol][: size]
-                                        for symbol,
-                                        size in symbols_counter.items()],
-                                       [])] = vector
+                        feedvector[j, sum(map(
+                            lambda x:vector_elements[x[0]][: x[1]], symbols_counter.items()), [])] = vector
                         max_counter |= symbols_counter
                         j += 1
                     semaphore.release()
@@ -184,9 +183,10 @@ class DatasetBuilder(object):
                 np.sort(feedvector), n_clusters=self.n_clusters)
             pool.join()
         else:
-            stepatom = [(u, vv) for u, v in self.dstep.items() for vv in v]
+            stepatom = np.array([[u, vv]
+                                 for u, v in self.dstep.items() for vv in v])
             choosedindexs = range(n_atoms)
-        fc.write(self.listtobytes(choosedindexs))
+        fc.write(self.listtobytes(stepatom[choosedindexs]))
         self._nstructure += len(choosedindexs)
 
     def _writestepmatrix(self, item):
@@ -198,20 +198,21 @@ class DatasetBuilder(object):
                 # atom ID starts from 1
                 distances = step_atoms.get_distances(
                     atoma-1, range(len(step_atoms)), mic=True)
-                cutoffatomid = [i for i in range(
-                    len(step_atoms)) if distances[i] < self.cutoff]
+                cutoffatomid = np.where(distances < self.cutoff)
                 cutoffatoms = step_atoms[cutoffatomid]
                 symbols = cutoffatoms.get_chemical_symbols()
-                results.append((np.array([int(step), int(atoma)]), self._calcoulumbmatrix(
-                    cutoffatoms), Counter(symbols)))
+                results.append(
+                    (np.array([step, atoma]),
+                     self._calcoulumbmatrix(cutoffatoms),
+                     Counter(symbols)))
         return results
 
     def _calcoulumbmatrix(self, atoms):
         # https://github.com/crcollins/molml/blob/master/molml/utils.py
         top = np.outer(atoms.numbers, atoms.numbers).astype(np.float64)
         r = atoms.get_all_distances(mic=True)
-        diag = np.array([self._coulumbdiag[symbol]
-                         for symbol in atoms.get_chemical_symbols()])
+        diag = np.array(
+            map(lambda symbol: self._coulumbdiag[symbol], atoms.get_chemical_symbols()))
         with np.errstate(divide='ignore', invalid='ignore'):
             np.divide(top, r, top)
             np.fill_diagonal(top, diag)
@@ -251,12 +252,16 @@ class DatasetBuilder(object):
         self.dstep = defaultdict(list)
         with open(os.path.join(self.trajatom_dir, "chooseatoms"), 'rb') as fc, open(self.dumpfilename) as f, open(self.bondfilename) as fb, Pool(self.nproc, maxtasksperchild=10000) as pool, tqdm(desc="Write structures", unit="structure", total=self._nstructure) as pbar:
             semaphore = Semaphore(360)
+            typecounter = Counter()
             for typefile, trajatomfilename in zip(fc, self.atombondtype):
-                for line in self.bytestolist(typefile):
-                    self.dstep[line[0]].append((line[1], trajatomfilename))
-            i = Counter()
-            ii = 0
-            maxlength = len(str(self.n_clusters))
+                for step, atoma in self.bytestolist(typefile):
+                    self.dstep[step].append(
+                        (atoma, trajatomfilename,
+                         typecounter[trajatomfilename],
+                         typecounter['total']))
+                    typecounter[trajatomfilename] += 1
+                    typecounter['total'] += 1
+            self.maxlength = len(str(self.n_clusters))
             results = pool.imap_unordered(
                 self._writestepxyzfile, self._produce(
                     semaphore,
@@ -272,74 +277,50 @@ class DatasetBuilder(object):
                                 0, None, self.stepinterval))),
                     None),
                 100)
+            foldernum = self._nstructure//1000 + 1
+            self.foldermaxlength = len(str(foldernum))
+            foldernames = list(map(lambda i: str(i).zfill(
+                self.foldermaxlength), range(foldernum)))
+            for folder in foldernames:
+                self._mkdir(os.path.join(self.dataset_dir, folder))
+            if self.writegjf:
+                for folder in foldernames:
+                    self._mkdir(os.path.join(self.gjfdir, folder))
             for result in results:
-                for takenatoms, trajatomfilename in result:
-                    pbar.update(1)
-                    folder = str(ii//1000).zfill(3)
-                    atomtypenum = str(i[trajatomfilename]).zfill(maxlength)
-                    self._mkdir(os.path.join(self.dataset_dir, folder))
-                    cutoffatoms = sum(takenatoms, Atoms())
-                    cutoffatoms.wrap(
-                        center=cutoffatoms[0].position /
-                        takenatoms[0].get_cell_lengths_and_angles()[0: 3],
-                        pbc=cutoffatoms.get_pbc())
-                    write_xyz(
-                        os.path.join(
-                            self.dataset_dir, folder,
-                            f'{self.xyzfilename}_{trajatomfilename}_{atomtypenum}.xyz'),
-                        cutoffatoms, format='xyz')
-                    if self.writegjf:
-                        self._mkdir(os.path.join(self.gjfdir, folder))
-                        self._convertgjf(
-                            os.path.join(
-                                self.gjfdir, folder,
-                                f'{self.xyzfilename}_{trajatomfilename}_{atomtypenum}.gjf'),
-                            takenatoms)
-                    i[trajatomfilename] += 1
-                    ii += 1
+                pbar.update(result)
                 semaphore.release()
             pool.close()
             pool.join()
 
-    def _convertgjf(self, gjffilename, selected_atoms):
+    def _convertgjf(self, gjffilename, takenatomidindex, atoms_whole):
         buff = []
         # only support CHO, multiplicity of oxygen is 3
-        multiplicities = list(
-            (3
-             if atoms.get_chemical_symbols() == ["O", "O"]
-             else(Counter(atoms.get_chemical_symbols())['H'] % 2 + 1))
-            for atoms in selected_atoms)
-        atoms_whole = sum(selected_atoms, Atoms())
-        atoms_whole.set_cell(selected_atoms[0].get_cell())
-        atoms_whole.set_pbc(selected_atoms[0].get_pbc())
-        multiplicity_whole = sum(multiplicities)-len(selected_atoms)+1
+        multiplicities = list(map(lambda atoms: (3 if atoms_whole[atoms].get_chemical_symbols() == [
+                              "O", "O"] else(Counter(atoms_whole[atoms].get_chemical_symbols())['H'] % 2 + 1)), takenatomidindex))
+        multiplicity_whole = sum(multiplicities)-len(takenatomidindex)+1
         title = '\nGenerated by MDDatasetMaker\n'
-        if len(selected_atoms) == 1 or not self.fragment:
-            atoms_whole.wrap(
-                center=atoms_whole[0].position/atoms_whole.get_cell_lengths_and_angles()[0:3], pbc=atoms_whole.get_pbc())
+        if len(takenatomidindex) == 1 or not self.fragment:
             buff.extend((self.qmkeywords, title))
             buff.append(f'0 {multiplicity_whole}')
-            buff.extend(("{} {:.5f} {:.5f} {:.5f}".format(
-                atom.symbol, *atom.position)
-                for atom in atoms_whole))
+            buff.extend(map(lambda atom: "{} {:.5f} {:.5f} {:.5f}".format(
+                atom.symbol, *atom.position), atoms_whole))
             buff.append('\n')
         else:
-            for atoms in selected_atoms:
-                atoms.wrap(center=atoms_whole[0].position/atoms_whole.get_cell_lengths_and_angles()[
-                           0:3], pbc=atoms_whole.get_pbc())
             chk = f'%chk={os.path.splitext(os.path.basename(gjffilename))[0]}.chk'
             connect = '\n--link1--\n'
-            kw1 = f'{self.qmkeywords} guess=fragment={len(selected_atoms)}'
+            kw1 = f'{self.qmkeywords} guess=fragment={len(takenatomidindex)}'
             kw2 = f'{self.qmkeywords} force geom=chk guess=read'
             multiplicities_str = ' '.join(
-                (f'0 {multiplicity}'
-                 for multiplicity in itertools.chain(
-                     (multiplicity_whole,),
-                     multiplicities)))
+                map(
+                    lambda
+                    multiplicity: f'0 {multiplicity}',
+                    itertools.chain(
+                        (multiplicity_whole,),
+                        multiplicities)))
             buff.extend((chk, kw1, title, multiplicities_str))
-            for index, atoms in enumerate(selected_atoms, 1):
-                buff.extend(('{}(Fragment={}) {:.5f} {:.5f} {:.5f}'.format(
-                    atom.symbol, index, *atom.position) for atom in atoms))
+            for index, atoms in enumerate(takenatomidindex, 1):
+                buff.extend(map(lambda atom: '{}(Fragment={}) {:.5f} {:.5f} {:.5f}'.format(
+                    atom.symbol, index, *atom.position), atoms_whole[atoms]))
             buff.extend((connect, chk, kw2,
                          title, multiplicities_str, '\n'))
         with open(gjffilename, 'w') as f:
@@ -347,27 +328,46 @@ class DatasetBuilder(object):
 
     def _writestepxyzfile(self, item):
         (step, (dumplines, bondlines)), _ = item
-        results = []
+        results = 0
         if step in self.dstep:
             step_atoms = self._readlammpscrdstep(((step, dumplines), None))
             molecules = self._readlammpsbondstepmolecules(bondlines)
-            for atoma, trajatomfilename in self.dstep[step]:
+            for atoma, trajatomfilename, itype, itotal in self.dstep[step]:
+                # update counter
+                folder = str(itotal//1000).zfill(self.foldermaxlength)
+                atomtypenum = str(itype).zfill(self.maxlength)
                 # atom ID starts from 1
                 distances = step_atoms.get_distances(
                     atoma-1, range(len(step_atoms)), mic=True)
                 cutoffatomid = np.where(distances < self.cutoff)
                 # make cutoff atoms in molecules
                 takenatomids = []
+                takenatomidindex = []
+                idsum = 0
                 for mo in molecules:
-                    mol_atomid = map(lambda x: x-1, mo)
-                    for moatom in mol_atomid:
-                        if moatom in cutoffatomid:
-                            takenatomids.append(mol_atomid)
-                            break
-                takenatoms = map(
-                    lambda takenatomid: step_atoms[takenatomid],
-                    takenatomids)
-                results.append((takenatoms, trajatomfilename))
+                    mol_atomid = np.array(mo)
+                    if np.any(np.isin(mol_atomid, cutoffatomid)):
+                        takenatomids.append(mol_atomid)
+                        takenatomidindex.append(
+                            range(idsum, idsum+len(mol_atomid)))
+                        idsum += len(mol_atomid)
+                cutoffatoms = step_atoms[np.concatenate(takenatomids)]
+                cutoffatoms.wrap(
+                    center=cutoffatoms[0].position /
+                    cutoffatoms.get_cell_lengths_and_angles()[0: 3],
+                    pbc=cutoffatoms.get_pbc())
+                write_xyz(
+                    os.path.join(
+                        self.dataset_dir, folder,
+                        f'{self.xyzfilename}_{trajatomfilename}_{atomtypenum}.xyz'),
+                    cutoffatoms, format='xyz')
+                if self.writegjf:
+                    self._convertgjf(
+                        os.path.join(
+                            self.gjfdir, folder,
+                            f'{self.xyzfilename}_{trajatomfilename}_{atomtypenum}.gjf'),
+                        takenatomidindex, cutoffatoms)
+                results += 1
         return results
 
     def _readlammpsbondN(self, f):
@@ -390,6 +390,7 @@ class DatasetBuilder(object):
         steplinenum = stepbindex-stepaindex
         self._N = N
         self.atomtype = atomtype
+        self.atomnames = self.atomname[self.atomtype-1]
         return steplinenum
 
     def _readlammpscrdN(self):
@@ -418,7 +419,7 @@ class DatasetBuilder(object):
             if line:
                 if not line.startswith("#"):
                     s = line.split()
-                    bond[int(s[0])-1] = map(int, s[3:3+int(s[2])])
+                    bond[int(s[0])-1] = map(lambda x: int(x)-1, s[3:3+int(s[2])])
         molecules = connectmolecule(bond)
         return molecules
 
@@ -430,10 +431,10 @@ class DatasetBuilder(object):
             if line:
                 if line[0] != "#":
                     s = line.split()
-                    atombondstr = "".join(map(str, sorted(
-                        map(lambda x: max(1, round(float(x))), s[4 + int(s[2]): 4 + 2 * int(s[2])]))))
-                    d[self.atomname[self.atomtype[int(
-                        s[0])-1]-1]+atombondstr].append(int(s[0]))
+                    atombond = sorted(
+                        map(lambda x: max(1, round(float(x))), s[4 + int(s[2]): 4 + 2 * int(s[2])]))
+                    d[pickle.dumps((self.atomnames[int(s[0]) - 1],
+                                    atombond))].append(int(s[0]))
         return d, step
 
     def _readtimestepsbond(self):
@@ -457,7 +458,8 @@ class DatasetBuilder(object):
             nstep = 0
             for d, step in tqdm(
                     results, desc="Read trajectory", unit="timestep"):
-                for bondtype, atomids in d.items():
+                for bondtypebytes, atomids in d.items():
+                    bondtype = self._bondtype(bondtypebytes)
                     if bondtype not in self.atombondtype:
                         self.atombondtype.append(bondtype)
                         stepatomfiles[bondtype] = open(os.path.join(
@@ -471,6 +473,14 @@ class DatasetBuilder(object):
         for stepatomfile in stepatomfiles.values():
             stepatomfile.close()
         pool.join()
+
+    def _bondtype(self, typebytes):
+        if typebytes in self.bondtyperestore:
+            return self.bondtyperestore[typebytes]
+        typetuple = pickle.loads(typebytes)
+        typestr = f"{typetuple[0]}{''.join(map(str,typetuple[1]))}"
+        self.bondtyperestore[typebytes] = typestr
+        return typestr
 
     @classmethod
     def _compress(cls, x, isbytes=False):
