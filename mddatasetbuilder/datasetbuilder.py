@@ -30,6 +30,8 @@ from sklearn import preprocessing
 from sklearn.cluster import MiniBatchKMeans
 from tqdm import tqdm
 
+from .dps import dps as connectmolecule
+
 try:
     __version__ = get_distribution(__name__).version
 except DistributionNotFound:
@@ -353,18 +355,18 @@ class DatasetBuilder(object):
                 # atom ID starts from 1
                 distances = step_atoms.get_distances(
                     atoma-1, range(len(step_atoms)), mic=True)
-                cutoffatomid = [i for i in range(
-                    len(step_atoms)) if distances[i] < self.cutoff]
+                cutoffatomid = np.where(distances < self.cutoff)
                 # make cutoff atoms in molecules
                 takenatomids = []
                 for mo in molecules:
-                    mol_atomid = [int(x)-1 for x in mo]
+                    mol_atomid = map(lambda x: x-1, mo)
                     for moatom in mol_atomid:
                         if moatom in cutoffatomid:
                             takenatomids.append(mol_atomid)
                             break
-                takenatoms = [step_atoms[takenatomid]
-                              for takenatomid in takenatomids]
+                takenatoms = map(
+                    lambda takenatomid: step_atoms[takenatomid],
+                    takenatomids)
                 results.append((takenatoms, trajatomfilename))
         return results
 
@@ -411,33 +413,14 @@ class DatasetBuilder(object):
 
     def _readlammpsbondstepmolecules(self, lines):
         # copy from reacnetgenerator on 2018-12-15
-        bond = [None for x in range(self._N)]
+        bond = [None]*self._N
         for line in lines:
             if line:
                 if not line.startswith("#"):
                     s = line.split()
-                    bond[int(s[0])-1] = [int(x) for x in s[3:3+int(s[2])]]
-        molecules = self._connectmolecule(bond)
+                    bond[int(s[0])-1] = map(int, s[3:3+int(s[2])])
+        molecules = connectmolecule(bond)
         return molecules
-
-    def _connectmolecule(self, bond):
-        # copy from reacnetgenerator on 2018-12-15
-        molecules = []
-        done = np.zeros(self._N, dtype=bool)
-        for i in range(1, self._N+1):
-            if not done[i-1]:
-                mole, done = self._mo(i, bond, [], done)
-                molecules.append(sorted(mole))
-        return molecules
-
-    def _mo(self, i, bond, molecule, done):
-        # copy from reacnetgenerator on 2018-12-15
-        molecule.append(i)
-        done[i-1] = True
-        for b in bond[i-1]:
-            if not done[b-1]:
-                molecule, done = self._mo(b, bond, molecule, done)
-        return molecule, done
 
     def _readlammpsbondstep(self, item):
         # copy from reacnetgenerator on 2018-12-15
@@ -445,13 +428,10 @@ class DatasetBuilder(object):
         d = defaultdict(list)
         for line in lines:
             if line:
-                if not line.startswith("#"):
+                if line[0] != "#":
                     s = line.split()
-                    atombondstr = "".join(
-                        str(x)
-                        for x in sorted(
-                            [max(1, round(float(x)))
-                             for x in s[4 + int(s[2]): 4 + 2 * int(s[2])]]))
+                    atombondstr = "".join(map(str, sorted(
+                        map(lambda x: max(1, round(float(x))), s[4 + int(s[2]): 4 + 2 * int(s[2])]))))
                     d[self.atomname[self.atomtype[int(
                         s[0])-1]-1]+atombondstr].append(int(s[0]))
         return d, step
@@ -482,7 +462,8 @@ class DatasetBuilder(object):
                         self.atombondtype.append(bondtype)
                         stepatomfiles[bondtype] = open(os.path.join(
                             self.trajatom_dir, f'stepatom.{bondtype}'), 'wb')
-                    stepatomfiles[bondtype].write(self.listtobytes([step, atomids]))
+                    stepatomfiles[bondtype].write(
+                        self.listtobytes([step, atomids]))
                 semaphore.release()
                 nstep += 1
         pool.close()
@@ -498,16 +479,23 @@ class DatasetBuilder(object):
         This function reduces IO overhead to speed up the program.
         """
         if isbytes:
-            return pybase64.b64encode(lz4.frame.compress(x, compression_level=-1))+b'\n'
-        return pybase64.b64encode(lz4.frame.compress(x.encode(), compression_level=-1))+b'\n'
+            return pybase64.b64encode(
+                lz4.frame.compress(x, compression_level=-1)) + b'\n'
+        return pybase64.b64encode(lz4.frame.compress(
+            x.encode(),
+            compression_level=-1)) + b'\n'
 
     @classmethod
     def _decompress(cls, x, isbytes=False):
         """Decompress the line."""
         if isbytes:
-            return lz4.frame.decompress(pybase64.b64decode(x.strip(), validate=True))
-        return lz4.frame.decompress(pybase64.b64decode(x.strip(), validate=True)).decode()
-    
+            return lz4.frame.decompress(pybase64.b64decode(
+                x.strip(),
+                validate=True))
+        return lz4.frame.decompress(pybase64.b64decode(
+            x.strip(),
+            validate=True)).decode()
+
     @classmethod
     def listtobytes(cls, x):
         return cls._compress(pickle.dumps(x), isbytes=True)
