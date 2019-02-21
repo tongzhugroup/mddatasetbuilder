@@ -21,7 +21,7 @@ from multiprocessing import Pool, Semaphore, cpu_count
 
 import numpy as np
 import pybase64
-import lz4
+import lz4.frame
 from ase import Atom, Atoms
 from ase.data import atomic_numbers
 from ase.io import write as write_xyz
