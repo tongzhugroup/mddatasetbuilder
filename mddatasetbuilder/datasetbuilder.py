@@ -211,8 +211,7 @@ class DatasetBuilder(object):
         # https://github.com/crcollins/molml/blob/master/molml/utils.py
         top = np.outer(atoms.numbers, atoms.numbers).astype(np.float64)
         r = atoms.get_all_distances(mic=True)
-        diag = np.array(
-            list(map(lambda symbol: self._coulumbdiag[symbol], atoms.get_chemical_symbols())))
+        diag = np.array(list(map(_coulumbdiag.get, atoms.get_chemical_symbols())))
         with np.errstate(divide='ignore', invalid='ignore'):
             np.divide(top, r, top)
             np.fill_diagonal(top, diag)
@@ -225,7 +224,7 @@ class DatasetBuilder(object):
         min_max_scaler = preprocessing.MinMaxScaler()
         X = np.array(min_max_scaler.fit_transform(X))
         clus = MiniBatchKMeans(n_clusters=n_clusters, init_size=(
-            3*n_clusters if 3*n_clusters < len(X) else len(X)))
+            min(3*n_clusters, len(X))))
         labels = clus.fit_predict(X)
         chooseindex = {}
         choosenum = {}
@@ -353,7 +352,7 @@ class DatasetBuilder(object):
                         idsum += len(mol_atomid)
                 cutoffatoms = step_atoms[np.concatenate(takenatomids)]
                 cutoffatoms.wrap(
-                    center=cutoffatoms[0].position /
+                    center=step_atoms[atoma-1].position /
                     cutoffatoms.get_cell_lengths_and_angles()[0: 3],
                     pbc=cutoffatoms.get_pbc())
                 write_xyz(
