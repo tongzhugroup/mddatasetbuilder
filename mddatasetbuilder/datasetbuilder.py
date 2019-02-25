@@ -211,7 +211,8 @@ class DatasetBuilder(object):
         # https://github.com/crcollins/molml/blob/master/molml/utils.py
         top = np.outer(atoms.numbers, atoms.numbers).astype(np.float64)
         r = atoms.get_all_distances(mic=True)
-        diag = np.array(list(map(_coulumbdiag.get, atoms.get_chemical_symbols())))
+        diag = np.array(
+            list(map(_coulumbdiag.get, atoms.get_chemical_symbols())))
         with np.errstate(divide='ignore', invalid='ignore'):
             np.divide(top, r, top)
             np.fill_diagonal(top, diag)
