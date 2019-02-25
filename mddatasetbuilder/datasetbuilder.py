@@ -490,10 +490,9 @@ class DatasetBuilder(object):
         """
         if isbytes:
             return pybase64.b64encode(
-                lz4.frame.compress(x, compression_level=-1)) + b'\n'
+                lz4.frame.compress(x)) + b'\n'
         return pybase64.b64encode(lz4.frame.compress(
-            x.encode(),
-            compression_level=-1)) + b'\n'
+            x.encode())) + b'\n'
 
     @classmethod
     def _decompress(cls, x, isbytes=False):
