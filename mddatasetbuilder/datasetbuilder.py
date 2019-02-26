@@ -262,6 +262,15 @@ class DatasetBuilder(object):
                     typecounter[trajatomfilename] += 1
                     typecounter['total'] += 1
             self.maxlength = len(str(self.n_clusters))
+            foldernum = self._nstructure//1000 + 1
+            self.foldermaxlength = len(str(foldernum))
+            foldernames = list(map(lambda i: str(i).zfill(
+                self.foldermaxlength), range(foldernum)))
+            for folder in foldernames:
+                self._mkdir(os.path.join(self.dataset_dir, folder))
+            if self.writegjf:
+                for folder in foldernames:
+                    self._mkdir(os.path.join(self.gjfdir, folder))
             results = pool.imap_unordered(
                 self._writestepxyzfile, self._produce(
                     semaphore,
@@ -277,15 +286,6 @@ class DatasetBuilder(object):
                                 0, None, self.stepinterval))),
                     None),
                 100)
-            foldernum = self._nstructure//1000 + 1
-            self.foldermaxlength = len(str(foldernum))
-            foldernames = list(map(lambda i: str(i).zfill(
-                self.foldermaxlength), range(foldernum)))
-            for folder in foldernames:
-                self._mkdir(os.path.join(self.dataset_dir, folder))
-            if self.writegjf:
-                for folder in foldernames:
-                    self._mkdir(os.path.join(self.gjfdir, folder))
             for result in results:
                 pbar.update(result)
                 semaphore.release()
