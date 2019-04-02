@@ -14,7 +14,7 @@ MDDatasetBuilder is a script to build molecular dynamics (MD) datasets for neura
 
 **Email**: jzzeng@stu.ecnu.edu.cn
 
-[![Research Group](https://img.shields.io/website-up-down-green-red/http/computchem.cn.svg?label=Research%20Group)](http://computechem.cn)
+[![Research Group](https://img.shields.io/website-up-down-green-red/http/computchem.cn.svg?label=Research%20Group)](http://computchem.cn)
 
 ## Requirements
 * Python 3.6 - 3.7
