@@ -114,7 +114,7 @@ class DatasetBuilder:
         self._mkdir(self.trajatom_dir)
         with Pool(self.nproc, maxtasksperchild=10000) as pool:
             semaphore = Semaphore(360)
-            if errorfilename is not None:
+            if self.errorfilename is not None:
                 lineiter = (self.lineiter(self.bonddetector),
                             itertools.islice(open(self.errorfilename), 1, None))
             else:
