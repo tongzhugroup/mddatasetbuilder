@@ -320,11 +320,13 @@ class DatasetBuilder:
 
     def _writestepxyzfile(self, item):
         (step, lines), _ = item
-        (dumplines, bondlines)
         results = 0
         if step in self.dstep:
-            step_atoms = self.crddetector.readcrd(((step, dumplines), None))
-            molecules = self.bonddetector.readmolecule(bondlines)
+            if len(lines) == 2:
+                step_atoms = self.crddetector.readcrd(((step, lines[0]), None))
+                molecules = self.bonddetector.readmolecule(lines[1])
+            else:
+                molecules, step_atoms = self.crddetector.readcrd(((step, lines), None))
             for atoma, trajatomfilename, itype, itotal in self.dstep[step]:
                 # update counter
                 folder = str(itotal//1000).zfill(self.foldermaxlength)
