@@ -130,7 +130,7 @@ class DetectDump(Detect):
         d = defaultdict(list)
         step_atoms = self.readcrd(item)
         level = self._crd2bond(step_atoms, readlevel=True)
-        for (i, n), l in enumerate(self.atomnames), level:
+        for i, (n, l) in enumerate(zip(self.atomnames, level)):
             # Note that atom id starts from 1
             d[pickle.dumps((n, sorted(l)))].append(i+1)
         return d, step
