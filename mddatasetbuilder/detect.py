@@ -11,8 +11,8 @@ from .dps import dps as connectmolecule
 class Detect(metaclass=ABCMeta):
     def __init__(self, filename, atomname):
         self.filename = filename
-        self.steplinenum = self._readN()
         self.atomname = atomname
+        self.steplinenum = self._readN()
 
     @abstractmethod
     def _readN(self):
