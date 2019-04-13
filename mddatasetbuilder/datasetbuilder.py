@@ -324,7 +324,8 @@ class DatasetBuilder:
         results = 0
         if step in self.dstep:
             if len(lines) == 2:
-                step_atoms, _ = self.crddetector.readcrd(((step, lines[0]), None))
+                step_atoms, _ = self.crddetector.readcrd(
+                    ((step, lines[0]), None))
                 molecules = self.bonddetector.readmolecule(lines[1])
             else:
                 molecules, step_atoms = self.bonddetector.readmolecule(lines)
@@ -459,8 +460,28 @@ def _commandline():
         stepinterval=args.interval, n_clusters=args.size,
         qmkeywords=args.qmkeywords, nproc=args.nproc,
         errorfilename=args.errorfile, errorlimit=args.errorlimit
+<<<<<<< HEAD
         ).builddataset()
 rlimit
         ).builddataset()
 ile, errorlimit=args.errorlimit
         ).builddataset()
+=======
+    ).builddataset()
+>>>>>>> f5b8428d9542839d452f82564bf92e870880da87
+ args = parser.parse_args()
+    DatasetBuilder(
+        atomname=args.atomname, bondfilename=args.bondfile,
+        dumpfilename=args.dumpfile, dataset_name=args.name, cutoff=args.cutoff,
+        stepinterval=args.interval, n_clusters=args.size,
+        qmkeywords=args.qmkeywords, nproc=args.nproc,
+        errorfilename=args.errorfile, errorlimit=args.errorlimit
+<<<<<<< HEAD
+        ).builddataset()
+rlimit
+        ).builddataset()
+ile, errorlimit=args.errorlimit
+        ).builddataset()
+=======
+    ).builddataset()
+>>>>>>> f5b8428d9542839d452f82564bf92e870880da87
