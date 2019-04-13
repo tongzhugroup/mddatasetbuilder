@@ -32,7 +32,7 @@ class TestMDDatasetBuilder:
         os.chdir(folder)
         testparms = request.param
         # download bonds.reaxc and dump.reaxc
-        for fileparms in (testparms["bondfile"], testparms["dumpfile"]):
+        for fileparms in ((testparms["bondfile"], testparms["dumpfile"]) if "bondfile" in testparms else (testparms["dumpfile"],)):
             self._download_file(fileparms["url"],
                                 fileparms["filename"],
                                 fileparms["sha256"])
