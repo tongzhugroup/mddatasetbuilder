@@ -1,4 +1,4 @@
-language: 
+language: c
 os: linux
 env: PYTHON_VERSION=3.7 PIP_DEPENDENCIES="tox-conda tox-travis" CONDA_CHANNEL_PRIORITY=True CONDA_CHANNELS="conda-forge"
 cache:
