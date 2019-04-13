@@ -597,12 +597,3 @@ def _commandline():
         dumpfilename=args.dumpfile, dataset_name=args.name, cutoff=args.cutoff,
         stepinterval=args.interval, n_clusters=args.size,
         qmkeywords=args.qmkeywords, nproc=args.nproc).builddataset()
-taset()
-s, nproc=args.nproc).builddataset()
-taset()
-    dumpfilename=args.dumpfile, dataset_name=args.name, cutoff=args.cutoff,
-        stepinterval=args.interval, n_clusters=args.size,
-        qmkeywords=args.qmkeywords, nproc=args.nproc).builddataset()
-taset()
-
-taset()
