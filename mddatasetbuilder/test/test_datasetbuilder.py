@@ -13,37 +13,43 @@ import tempfile
 
 import pkg_resources
 import requests
+import pytest
 from tqdm import tqdm
 
 import mddatasetbuilder
 
 
+this_directory = os.getcwd()
+
+
 class TestMDDatasetBuilder:
     """Test MDDatasetBuilder."""
 
-    def test_datasetbuilder(self):
+    @pytest.fixture(params=json.load(
+        pkg_resources.resource_stream(__name__, 'test.json')))
+    def datasetbuilder(self, request):
         """Test DatasetBuilder."""
-        folder = tempfile.mkdtemp(prefix='testfiles-', dir='.')
+        folder = tempfile.mkdtemp(prefix='testfiles-', dir=this_directory)
         logging.info(f'Folder: {folder}:')
         os.chdir(folder)
-        testparms = json.load(
-            pkg_resources.resource_stream(__name__, 'test.json'))
+        testparms = request.param
         # download bonds.reaxc and dump.reaxc
-        for fileparms in (testparms["bondfile"], testparms["dumpfile"]):
+        for fileparms in ((testparms["bondfile"], testparms["dumpfile"]) if "bondfile" in testparms else (testparms["dumpfile"],)):
             self._download_file(fileparms["url"],
                                 fileparms["filename"],
                                 fileparms["sha256"])
 
-        d = mddatasetbuilder.DatasetBuilder(
-            bondfilename=testparms["bondfile"]["filename"],
+        return mddatasetbuilder.DatasetBuilder(
+            bondfilename=testparms["bondfile"]["filename"] if "bondfile" in testparms else None,
             dumpfilename=testparms["dumpfile"]["filename"],
             atomname=testparms["atomname"],
             dataset_name=testparms["dataset_name"],
             stepinterval=testparms["stepinterval"]
             if "stepinterval" in testparms else 1)
-        d.builddataset()
 
-        assert os.path.exists(d.gjfdir)
+    def test_datasetbuilder(self, datasetbuilder):
+        datasetbuilder.builddataset()
+        assert os.path.exists(datasetbuilder.gjfdir)
 
     def _download_file(self, urls, pathfilename, sha256):
         times = 0

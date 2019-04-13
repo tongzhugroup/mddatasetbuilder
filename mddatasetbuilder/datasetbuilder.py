@@ -22,7 +22,6 @@ from multiprocessing import Pool, Semaphore, cpu_count
 import numpy as np
 import pybase64
 import lz4.frame
-from ase import Atom, Atoms
 from ase.data import atomic_numbers
 from ase.io import write as write_xyz
 from pkg_resources import DistributionNotFound, get_distribution
@@ -30,7 +29,7 @@ from sklearn import preprocessing
 from sklearn.cluster import MiniBatchKMeans
 from tqdm import tqdm
 
-from .dps import dps as connectmolecule
+from .detect import Detect
 
 try:
     __version__ = get_distribution(__name__).version
@@ -39,12 +38,12 @@ except DistributionNotFound:
     __version__ = ''
 
 
-class DatasetBuilder(object):
+class DatasetBuilder:
     """Dataset Builder."""
 
     def __init__(
             self, atomname=None,
-            clusteratom=None, bondfilename="bonds.reaxc",
+            clusteratom=None, bondfilename=None,
             dumpfilename="dump.reaxc", dataset_name="md", cutoff=5,
             stepinterval=1, n_clusters=10000,
             qmkeywords="%nproc=4\n#mn15/6-31g(d,p)", nproc=None, pbc=True,
@@ -52,12 +51,18 @@ class DatasetBuilder(object):
         """Init the builder."""
         print(__doc__)
         print(f"Author:{__author__}  Email:{__email__}")
-        self.dumpfilename = dumpfilename
-        self.bondfilename = bondfilename
+        atomname = np.array(
+            atomname) if atomname else np.array(["C", "H", "O"])
+        self.crddetector = Detect.gettype('dump')(
+            filename=dumpfilename, atomname=atomname, pbc=pbc)
+        if bondfilename is None:
+            self.bonddetector = self.crddetector
+        else:
+            self.bonddetector = Detect.gettype('bond')(
+                filename=bondfilename, atomname=atomname, pbc=pbc)
+
         self.dataset_dir = f"dataset_{dataset_name}"
         self.xyzfilename = dataset_name
-        self.atomname = np.array(
-            atomname) if atomname else np.array(["C", "H", "O"])
         self.clusteratom = clusteratom if clusteratom else atomname
         self.atombondtype = []
         self.stepinterval = stepinterval
@@ -67,12 +72,10 @@ class DatasetBuilder(object):
         self.writegjf = True
         self.gjfdir = f'{self.dataset_dir}_gjf'
         self.qmkeywords = qmkeywords
-        self.pbc = pbc
         self.fragment = fragment
         self._coulumbdiag = dict(map(lambda symbol: (
             symbol, atomic_numbers[symbol]**2.4/2), atomname))
         self._nstructure = 0
-        self.atomnames = None
         self.bondtyperestore = {}
 
     def builddataset(self, writegjf=True):
@@ -84,7 +87,6 @@ class DatasetBuilder(object):
                 if runstep == 0:
                     self._readtimestepsbond()
                 elif runstep == 1:
-                    self.steplinenum = self._readlammpscrdN()
                     with open(os.path.join(self.trajatom_dir, 'chooseatoms'), 'wb') as f:
                         for bondtype in self.atombondtype:
                             self._writecoulumbmatrix(bondtype, f)
@@ -105,30 +107,34 @@ class DatasetBuilder(object):
             semaphore.acquire()
             yield item, parameter
 
-    def _readlammpscrdstep(self, item):
-        (_, lines), _ = item
-        boxsize = []
-        step_atoms = []
-        for line in lines:
-            if line:
-                if line.startswith("ITEM:"):
-                    linecontent = 4 if line.startswith("ITEM: TIMESTEP") else (3 if line.startswith(
-                        "ITEM: ATOMS") else (1 if line.startswith("ITEM: NUMBER OF ATOMS") else 2))
-                else:
-                    if linecontent == 3:
-                        s = line.split()
-                        step_atoms.append(
-                            (int(s[0]),
-                             Atom(
-                                 self.atomname[int(s[1]) - 1],
-                                 tuple(map(float, s[2: 5])))))
-                    elif linecontent == 2:
-                        s = line.split()
-                        boxsize.append(float(s[1])-float(s[0]))
-        # sort by ID
-        _, step_atoms = zip(*sorted(step_atoms, key=lambda a: a[0]))
-        step_atoms = Atoms(step_atoms, cell=boxsize, pbc=self.pbc)
-        return step_atoms
+    def _readtimestepsbond(self):
+        # added on 2018-12-15
+        stepatomfiles = {}
+        self._mkdir(self.trajatom_dir)
+        with Pool(self.nproc, maxtasksperchild=10000) as pool:
+            semaphore = Semaphore(360)
+            results = pool.imap_unordered(
+                self.bonddetector.readatombondtype, self._produce(semaphore,
+                                                                  enumerate(self.lineiter(self.bonddetector)), None),
+                100)
+            nstep = 0
+            for d, step in tqdm(
+                    results, desc="Read trajectory", unit="timestep"):
+                for bondtypebytes, atomids in d.items():
+                    bondtype = self._bondtype(bondtypebytes)
+                    if bondtype not in self.atombondtype:
+                        self.atombondtype.append(bondtype)
+                        stepatomfiles[bondtype] = open(os.path.join(
+                            self.trajatom_dir, f'stepatom.{bondtype}'), 'wb')
+                    stepatomfiles[bondtype].write(
+                        self.listtobytes([step, atomids]))
+                semaphore.release()
+                nstep += 1
+        pool.close()
+        self._nstep = nstep
+        for stepatomfile in stepatomfiles.values():
+            stepatomfile.close()
+        pool.join()
 
     def _writecoulumbmatrix(self, trajatomfilename, fc):
         self.dstep = {}
@@ -143,18 +149,11 @@ class DatasetBuilder(object):
             stepatom = np.zeros((n_atoms, 2), dtype=int)
             feedvector = np.zeros((n_atoms, 0))
             vector_elements = defaultdict(list)
-            with open(self.dumpfilename) as f, Pool(self.nproc, maxtasksperchild=10000) as pool:
+            with Pool(self.nproc, maxtasksperchild=10000) as pool:
                 semaphore = Semaphore(360)
                 results = pool.imap_unordered(
-                    self._writestepmatrix, self._produce(
-                        semaphore,
-                        enumerate(
-                            itertools.islice(
-                                itertools.zip_longest(
-                                    *[f] * self.steplinenum),
-                                0, None, self.stepinterval)),
-                        None),
-                    100)
+                    self._writestepmatrix, self._produce(semaphore,
+                                                         enumerate(self.lineiter(self.crddetector)), None), 100)
                 j = 0
                 for result in tqdm(
                         results, desc=trajatomfilename, total=self._nstep,
@@ -193,7 +192,7 @@ class DatasetBuilder(object):
         (step, _), _ = item
         results = []
         if step in self.dstep:
-            step_atoms = self._readlammpscrdstep(item)
+            step_atoms = self.crddetector.readcrd(item)
             for atoma in self.dstep[step]:
                 # atom ID starts from 1
                 distances = step_atoms.get_distances(
@@ -250,7 +249,7 @@ class DatasetBuilder(object):
 
     def _writexyzfiles(self):
         self.dstep = defaultdict(list)
-        with open(os.path.join(self.trajatom_dir, "chooseatoms"), 'rb') as fc, open(self.dumpfilename) as f, open(self.bondfilename) as fb, Pool(self.nproc, maxtasksperchild=10000) as pool, tqdm(desc="Write structures", unit="structure", total=self._nstructure) as pbar:
+        with open(os.path.join(self.trajatom_dir, "chooseatoms"), 'rb') as fc, Pool(self.nproc, maxtasksperchild=10000) as pool, tqdm(desc="Write structures", unit="structure", total=self._nstructure) as pbar:
             semaphore = Semaphore(360)
             typecounter = Counter()
             for typefile, trajatomfilename in zip(fc, self.atombondtype):
@@ -271,21 +270,14 @@ class DatasetBuilder(object):
             if self.writegjf:
                 for folder in foldernames:
                     self._mkdir(os.path.join(self.gjfdir, folder))
-            results = pool.imap_unordered(
-                self._writestepxyzfile, self._produce(
-                    semaphore,
-                    enumerate(
-                        zip(
-                            itertools.islice(
-                                itertools.zip_longest(
-                                    *[f] * self.steplinenum),
-                                0, None, self.stepinterval),
-                            itertools.islice(
-                                itertools.zip_longest(
-                                    *[fb] * self.bondsteplinenum),
-                                0, None, self.stepinterval))),
-                    None),
-                100)
+            crditer = self.lineiter(self.crddetector)
+            if self.crddetector is self.bonddetector:
+                lineiter = crditer
+            else:
+                bonditer = self.lineiter(self.bonddetector)
+                lineiter = zip(crditer, bonditer)
+            results = pool.imap_unordered(self._writestepxyzfile, self._produce(
+                semaphore, enumerate(lineiter), None), 100)
             for result in results:
                 pbar.update(result)
                 semaphore.release()
@@ -327,11 +319,14 @@ class DatasetBuilder(object):
             f.write('\n'.join(buff))
 
     def _writestepxyzfile(self, item):
-        (step, (dumplines, bondlines)), _ = item
+        (step, lines), _ = item
         results = 0
         if step in self.dstep:
-            step_atoms = self._readlammpscrdstep(((step, dumplines), None))
-            molecules = self._readlammpsbondstepmolecules(bondlines)
+            if len(lines) == 2:
+                step_atoms = self.crddetector.readcrd(((step, lines[0]), None))
+                molecules = self.bonddetector.readmolecule(lines[1])
+            else:
+                molecules, step_atoms = self.bonddetector.readmolecule(lines)
             for atoma, trajatomfilename, itype, itotal in self.dstep[step]:
                 # update counter
                 folder = str(itotal//1000).zfill(self.foldermaxlength)
@@ -369,111 +364,6 @@ class DatasetBuilder(object):
                         takenatomidindex, cutoffatoms)
                 results += 1
         return results
-
-    def _readlammpsbondN(self, f):
-        # copy from reacnetgenerator on 2018-12-15
-        iscompleted = False
-        for index, line in enumerate(f):
-            if line.startswith("#"):
-                if line.startswith("# Number of particles"):
-                    if iscompleted:
-                        stepbindex = index
-                        break
-                    else:
-                        iscompleted = True
-                        stepaindex = index
-                    N = [int(s) for s in line.split() if s.isdigit()][0]
-                    atomtype = np.zeros(N, dtype=np.int)
-            else:
-                s = line.split()
-                atomtype[int(s[0])-1] = int(s[1])
-        steplinenum = stepbindex-stepaindex
-        self._N = N
-        self.atomtype = atomtype
-        self.atomnames = self.atomname[self.atomtype-1]
-        return steplinenum
-
-    def _readlammpscrdN(self):
-        # copy from reacnetgenerator on 2018-12-15
-        with open(self.dumpfilename) as f:
-            iscompleted = False
-            for index, line in enumerate(f):
-                if line.startswith("ITEM:"):
-                    linecontent = 4 if line.startswith("ITEM: TIMESTEP") else (3 if line.startswith(
-                        "ITEM: ATOMS") else (1 if line.startswith("ITEM: NUMBER OF ATOMS") else 2))
-                else:
-                    if linecontent == 1:
-                        if iscompleted:
-                            stepbindex = index
-                            break
-                        else:
-                            iscompleted = True
-                            stepaindex = index
-        steplinenum = stepbindex-stepaindex
-        return steplinenum
-
-    def _readlammpsbondstepmolecules(self, lines):
-        # copy from reacnetgenerator on 2018-12-15
-        bond = [None]*self._N
-        for line in lines:
-            if line:
-                if not line.startswith("#"):
-                    s = line.split()
-                    bond[int(s[0])-1] = map(lambda x: int(x) -
-                                            1, s[3:3+int(s[2])])
-        molecules = connectmolecule(bond)
-        return molecules
-
-    def _readlammpsbondstep(self, item):
-        # copy from reacnetgenerator on 2018-12-15
-        (step, lines), _ = item
-        d = defaultdict(list)
-        for line in lines:
-            if line:
-                if line[0] != "#":
-                    s = line.split()
-                    atombond = sorted(
-                        map(lambda x: max(1, round(float(x))), s[4 + int(s[2]): 4 + 2 * int(s[2])]))
-                    d[pickle.dumps((self.atomnames[int(s[0]) - 1],
-                                    atombond))].append(int(s[0]))
-        return d, step
-
-    def _readtimestepsbond(self):
-        # added on 2018-12-15
-        stepatomfiles = {}
-        self._mkdir(self.trajatom_dir)
-        with open(self.bondfilename) as f, Pool(self.nproc, maxtasksperchild=10000) as pool:
-            self.bondsteplinenum = self._readlammpsbondN(f)
-            f.seek(0)
-            semaphore = Semaphore(360)
-            results = pool.imap_unordered(
-                self._readlammpsbondstep, self._produce(
-                    semaphore,
-                    enumerate(
-                        itertools.islice(
-                            itertools.zip_longest(
-                                *[f] * self.bondsteplinenum),
-                            0, None, self.stepinterval)),
-                    None),
-                100)
-            nstep = 0
-            for d, step in tqdm(
-                    results, desc="Read trajectory", unit="timestep"):
-                for bondtypebytes, atomids in d.items():
-                    bondtype = self._bondtype(bondtypebytes)
-                    if bondtype not in self.atombondtype:
-                        self.atombondtype.append(bondtype)
-                        stepatomfiles[bondtype] = open(os.path.join(
-                            self.trajatom_dir, f'stepatom.{bondtype}'), 'wb')
-                    stepatomfiles[bondtype].write(
-                        self.listtobytes([step, atomids]))
-                semaphore.release()
-                nstep += 1
-        pool.close()
-        self._nstep = nstep
-        for stepatomfile in stepatomfiles.values():
-            stepatomfile.close()
-        pool.join()
 
     def _bondtype(self, typebytes):
         if typebytes in self.bondtyperestore:
@@ -514,14 +404,21 @@ class DatasetBuilder(object):
     def bytestolist(cls, x):
         return pickle.loads(cls._decompress(x, isbytes=True))
 
+    def lineiter(self, detector):
+        f = open(detector.filename)
+        it = itertools.islice(itertools.zip_longest(
+            *[f] * detector.steplinenum), 0, None, self.stepinterval)
+        for line in it:
+            yield line
+        f.close()
+
 
 def _commandline():
     parser = argparse.ArgumentParser(description='MDDatasetBuilder')
     parser.add_argument('-d', '--dumpfile',
                         help='Input dump file, e.g. dump.reaxc', required=True)
     parser.add_argument(
-        '-b', '--bondfile', help='Input bond file, e.g. bonds.reaxc',
-        required=True)
+        '-b', '--bondfile', help='Input bond file, e.g. bonds.reaxc')
     parser.add_argument('-a', '--atomname',
                         help='Atomic names in the trajectory, e.g. C H O',
                         nargs='*', required=True)
