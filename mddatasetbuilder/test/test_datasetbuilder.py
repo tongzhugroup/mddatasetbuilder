@@ -49,7 +49,7 @@ class TestMDDatasetBuilder:
 
     def test_datasetbuilder(self, datasetbuilder):
         datasetbuilder.builddataset()
-        assert os.path.exists(d.gjfdir)
+        assert os.path.exists(datasetbuilder.gjfdir)
 
     def _download_file(self, urls, pathfilename, sha256):
         times = 0
