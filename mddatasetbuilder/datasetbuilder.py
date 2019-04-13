@@ -114,13 +114,9 @@ class DatasetBuilder:
         self._mkdir(self.trajatom_dir)
         with Pool(self.nproc, maxtasksperchild=10000) as pool:
             semaphore = Semaphore(360)
-            if errorfilename is not None:
-                lineiter = (self.lineiter(self.bonddetector), itertools.islice(open(self.errorfilename), 1, None))
-            else:
-                lineiter = self.lineiter(self.bonddetector)
             results = pool.imap_unordered(
                 self.bonddetector.readatombondtype,
-                self._produce(semaphore, enumerate(self.lineiter(self.bonddetector)), (errorfilename is not None)),
+                self._produce(semaphore, enumerate((self.lineiter(self.bonddetector), self.erroriter()) if errorfilename is not None else self.lineiter(self.bonddetector)), (errorfilename is not None)),
                 100)
             nstep = 0
             for d, step in tqdm(
@@ -410,12 +406,21 @@ class DatasetBuilder:
         return pickle.loads(cls._decompress(x, isbytes=True))
 
     def lineiter(self, detector):
-        with open(detector.filename) as f:
-            it = itertools.islice(itertools.zip_longest(
-                *[f] * detector.steplinenum), 0, None, self.stepinterval)
-            for line in it:
-                yield line
+        fns = [detector.filename] if isinstance(detector.filename, str) else detector.filename
+        for fn in fns:
+            with open(fn) as f:
+                it = itertools.islice(itertools.zip_longest(
+                    *[f] * detector.steplinenum), 0, None, self.stepinterval)
+                for line in it:
+                    yield line
 
+    def erroriter(self):
+        fns = [self.errorfilename] if isinstance(self.errorfilename, str) else self.errorfilename
+        for fn in fns:
+            with open(fn) as f:
+                it = itertools.islice(f, 1, None)
+                for line in it:
+                    yield line
 
 def _commandline():
     parser = argparse.ArgumentParser(description='MDDatasetBuilder')
@@ -454,4 +459,8 @@ def _commandline():
         stepinterval=args.interval, n_clusters=args.size,
         qmkeywords=args.qmkeywords, nproc=args.nproc,
         errorfilename=args.errorfile, errorlimit=args.errorlimit
+        ).builddataset()
+rlimit
+        ).builddataset()
+ile, errorlimit=args.errorlimit
         ).builddataset()
