@@ -55,12 +55,12 @@ class DatasetBuilder:
         atomname = np.array(
             atomname) if atomname else np.array(["C", "H", "O"])
         self.crddetector = Detect.gettype('dump')(
-            filename=dumpfilename, atomname=self.atomname)
+            filename=dumpfilename, atomname=atomname)
         if bondfilename is None:
             self.bonddetector = self.crddetector
         else:
             self.bonddetector = Detect.gettype('bond')(
-                filename=bondfilename, atomname=self.atomname)
+                filename=bondfilename, atomname=atomname)
 
         self.dataset_dir = f"dataset_{dataset_name}"
         self.xyzfilename = dataset_name
