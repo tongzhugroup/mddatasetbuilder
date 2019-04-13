@@ -16,7 +16,6 @@ class Detect(metaclass=ABCMeta):
         self.atomname = atomname
         self.pbc = pbc
         self.steplinenum = self._readN()
-        print(self.atomnames, self.atomtype)
 
     @abstractmethod
     def _readN(self):
