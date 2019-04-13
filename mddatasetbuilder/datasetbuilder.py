@@ -52,12 +52,15 @@ class DatasetBuilder:
         """Init the builder."""
         print(__doc__)
         print(f"Author:{__author__}  Email:{__email__}")
-        atomname = np.array(atomname) if atomname else np.array(["C", "H", "O"])
-        self.crddetector = Detect.gettype('dump')(filename = dumpfilename, atomname = self.atomname)
+        atomname = np.array(
+            atomname) if atomname else np.array(["C", "H", "O"])
+        self.crddetector = Detect.gettype('dump')(
+            filename=dumpfilename, atomname=self.atomname)
         if bondfilename is None:
             self.bonddetector = self.crddetector
         else:
-            self.bonddetector = Detect.gettype('bond')(filename = bondfilename, atomname = self.atomname)        
+            self.bonddetector = Detect.gettype('bond')(
+                filename=bondfilename, atomname=self.atomname)
 
         self.dataset_dir = f"dataset_{dataset_name}"
         self.xyzfilename = dataset_name
@@ -105,7 +108,7 @@ class DatasetBuilder:
         for item in producelist:
             semaphore.acquire()
             yield item, parameter
-    
+
     def _readtimestepsbond(self):
         # added on 2018-12-15
         stepatomfiles = {}
@@ -275,7 +278,8 @@ class DatasetBuilder:
             else:
                 bonditer = self.lineiter(self.bonddetector)
                 lineiter = zip(crditer, bonditer)
-            results = pool.imap_unordered(self._writestepxyzfile, self._produce(semaphore, enumerate(bonditer), None), 100)
+            results = pool.imap_unordered(self._writestepxyzfile, self._produce(
+                semaphore, enumerate(bonditer), None), 100)
             for result in results:
                 pbar.update(result)
                 semaphore.release()
@@ -402,7 +406,8 @@ class DatasetBuilder:
 
     def lineiter(self, detector):
         f = open(detector)
-        it = itertools.islice(itertools.zip_longest(*[f] * detector.steplinenum),0, None, self.stepinterval)
+        it = itertools.islice(itertools.zip_longest(
+            *[f] * detector.steplinenum), 0, None, self.stepinterval)
         for line in it:
             yield line
         f.close()
@@ -440,8 +445,10 @@ def _commandline():
         dumpfilename=args.dumpfile, dataset_name=args.name, cutoff=args.cutoff,
         stepinterval=args.interval, n_clusters=args.size,
         qmkeywords=args.qmkeywords, nproc=args.nproc).builddataset()
+
+
 taset()
-s, nproc=args.nproc).builddataset()
+s, nproc = args.nproc).builddataset()
 taset()
     dumpfilename=args.dumpfile, dataset_name=args.name, cutoff=args.cutoff,
         stepinterval=args.interval, n_clusters=args.size,
@@ -470,9 +477,7 @@ taset()
 f,
         stepinterval=args.interval, n_clusters=args.size,
         qmkeywords=args.qmkeywords, nproc=args.nproc).builddataset()
-taset()
-
-=args.nproc).builddataset()
+taset()=args.nproc).builddataset()
 taset()
 s, nproc=args.nproc).builddataset()
 taset()
@@ -529,38 +534,38 @@ taset()
     @classmethod
     def bytestolist(cls, x):
         return pickle.loads(cls._decompress(x, isbytes=True))
-    
+
     @classmethod
     def _getbondfromcrd(cls, step_atoms):
         # copy from reacnetgenerator on 2019/4/13
-        atomnumber = len(step_atoms)
-        xyzstring = ''.join((f"{atomnumber}\n{__name__}\n", "\n".join(
+        atomnumber=len(step_atoms)
+        xyzstring=''.join((f"{atomnumber}\n{__name__}\n", "\n".join(
             [f'{s:2s} {x:22.15f} {y:22.15f} {z:22.15f}'
              for s, (x, y, z) in zip(
                  step_atoms.get_chemical_symbols(),
                  step_atoms.positions)])))
-        conv = openbabel.OBConversion()
+        conv=openbabel.OBConversion()
         conv.SetInAndOutFormats('xyz', 'mol2')
-        mol = openbabel.OBMol()
+        mol=openbabel.OBMol()
         conv.ReadString(mol, xyzstring)
-        mol2string = conv.WriteString(mol)
-        linecontent = -1
-        bond = [[] for i in range(atomnumber)]
+        mol2string=conv.WriteString(mol)
+        linecontent=-1
+        bond=[[] for i in range(atomnumber)]
         for line in mol2string.split('\n'):
             if line.startswith("@<TRIPOS>BOND"):
-                linecontent = 0
+                linecontent=0
             else:
                 if linecontent == 0:
-                    s = line.split()
+                    s=line.split()
                     if len(s) > 3:
-                        b1, b2 = int(s[1])-1, int(s[2])-1
+                        b1, b2=int(s[1])-1, int(s[2])-1
                         bond[b1].append(b2)
                         bond[b2].append(b1)
         return bond
 
 
 def _commandline():
-    parser = argparse.ArgumentParser(description='MDDatasetBuilder')
+    parser=argparse.ArgumentParser(description='MDDatasetBuilder')
     parser.add_argument('-d', '--dumpfile',
                         help='Input dump file, e.g. dump.reaxc', required=True)
     parser.add_argument(

@@ -26,7 +26,7 @@ class Detect(metaclass=ABCMeta):
     def readmolecule(self, lines):
         """This function reads molecules."""
         pass
-    
+
     @staticmethod
     def gettype(inputtype):
         """Get the class for the input file type."""
@@ -66,7 +66,7 @@ class DetectBond(Detect):
         self.atomtype = atomtype
         self.atomnames = self.atomname[self.atomtype-1]
         return steplinenum
-    
+
     def readatombondtype(self, item):
         # copy from reacnetgenerator on 2018-12-15
         (step, lines), _ = item
@@ -80,7 +80,7 @@ class DetectBond(Detect):
                     d[pickle.dumps((self.atomnames[int(s[0]) - 1],
                                     atombond))].append(int(s[0]))
         return d, step
-    
+
     def readmolecule(self, lines):
         # copy from reacnetgenerator on 2018-12-15
         bond = [None]*self._N
@@ -92,6 +92,7 @@ class DetectBond(Detect):
                                             1, s[3:3+int(s[2])])
         molecules = connectmolecule(bond)
         return molecules
+
 
 class DetectDump(Detect):
     def _readN(self):
@@ -118,7 +119,7 @@ class DetectDump(Detect):
         self.atomtype = atomtype
         self.atomnames = self.atomname[self.atomtype-1]
         return steplinenum
-    
+
     def readatombondtype(self, item):
         (step, _), _ = item
         d = defaultdict(list)
@@ -128,7 +129,7 @@ class DetectDump(Detect):
             # Note that atom id starts from 1
             d[pickle.dumps((n, sorted(l)))].append(i+1)
         return d, step
-    
+
     def readmolecule(self, lines):
         bond = [None]*self._N
         step_atoms = self.readcrd(((item, None), None))
@@ -172,12 +173,12 @@ class DetectDump(Detect):
                             bond[b1].append(b2)
                             bond[b2].append(b1)
         return bondlevel if readlevel else bond
-    
+
     def readcrd(self, item):
         """Only this function can read coordinates."""
         (_, lines), _ = item
         boxsize = []
-        step_atoms = []            
+        step_atoms = []
         for line in lines:
             if line:
                 if line.startswith("ITEM:"):
@@ -199,7 +200,7 @@ class DetectDump(Detect):
         _, step_atoms = zip(*sorted(step_atoms, key=lambda a: a[0]))
         step_atoms = Atoms(step_atoms, cell=boxsize, pbc=self.pbc)
         return step_atoms
-    
+
     class LineType(Enum):
         """Line type in the LAMMPS dump files."""
 
@@ -221,6 +222,7 @@ class DetectDump(Detect):
             if line.startswith("ITEM: BOX"):
                 return cls.BOX
             return cls.OTHER
+
     class LineType(Enum):
         """Line type in the LAMMPS dump files."""
 
@@ -241,17 +243,17 @@ class DetectDump(Detect):
                 return cls.NUMBER
             if line.startswith("ITEM: BOX"):
                 return cls.BOX
-            return cls.OTHERms, cell=boxsize, pbc=self.pbc)
+            return cls.OTHERms, cell = boxsize, pbc = self.pbc)
         return step_atoms
-    
+
     class LineType(Enum):
         """Line type in the LAMMPS dump files."""
 
-        TIMESTEP = auto()
-        ATOMS = auto()
-        NUMBER = auto()
-        BOX = auto()
-        OTHER = auto()
+        TIMESTEP=auto()
+        ATOMS=auto()
+        NUMBER=auto()
+        BOX=auto()
+        OTHER=auto()
 
         @classmethod
         def linecontent(cls, line):
@@ -266,11 +268,11 @@ class DetectDump(Detect):
                 return cls.BOX
             return cls.OTHER    """Line type in the LAMMPS dump files."""
 
-        TIMESTEP = auto()
-        ATOMS = auto()
-        NUMBER = auto()
-        BOX = auto()
-        OTHER = auto()
+        TIMESTEP=auto()
+        ATOMS=auto()
+        NUMBER=auto()
+        BOX=auto()
+        OTHER=auto()
 
         @classmethod
         def linecontent(cls, line):
