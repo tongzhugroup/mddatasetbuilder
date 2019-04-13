@@ -6,6 +6,7 @@ from collections import defaultdict
 
 import openbabel
 import numpy as np
+from ase import Atom, Atoms
 from .dps import dps as connectmolecule
 
 
