@@ -11,10 +11,12 @@ from .dps import dps as connectmolecule
 
 
 class Detect(metaclass=ABCMeta):
-    def __init__(self, filename, atomname, pbc):
+    def __init__(self, filename, atomname, pbc, errorlimit=None, errorfilename=None):
         self.filename = filename
         self.atomname = atomname
         self.pbc = pbc
+        self.errorlimit = errorlimit
+        self.errorfilename = errorfilename
         self.steplinenum = self._readN()
 
     @abstractmethod
@@ -126,18 +128,25 @@ class DetectDump(Detect):
         return steplinenum
 
     def readatombondtype(self, item):
-        (step, _), _ = item
+        (step, lines), needlerror = item
+        if needlerror:
+            trajline, errorline = lines
+            item = (step, trajline), None
+            lerror = np.fromstring(errorline, dtype=float, sep=' ')[7:]
         d = defaultdict(list)
-        step_atoms = self.readcrd(item)
+        step_atoms, ids = self.readcrd(item)
+        if needlerror:
+            lerror = [x for (y,x) in sorted(zip(ids, lerror))]
         level = self._crd2bond(step_atoms, readlevel=True)
         for i, (n, l) in enumerate(zip(self.atomnames, level)):
-            # Note that atom id starts from 1
-            d[pickle.dumps((n, sorted(l)))].append(i+1)
+            if not needlerror or lerror[i]>self.errorlimit:
+                # Note that atom id starts from 1
+                d[pickle.dumps((n, sorted(l)))].append(i+1)
         return d, step
 
     def readmolecule(self, lines):
         bond = [None]*self._N
-        step_atoms = self.readcrd(((None, lines), None))
+        step_atoms, _ = self.readcrd(((None, lines), None))
         bond = self._crd2bond(step_atoms, readlevel=False)
         molecules = connectmolecule(bond)
         # return atoms as well
@@ -184,6 +193,7 @@ class DetectDump(Detect):
         (_, lines), _ = item
         boxsize = []
         step_atoms = []
+        ids = []
         for line in lines:
             if line:
                 if line.startswith("ITEM:"):
@@ -191,18 +201,17 @@ class DetectDump(Detect):
                 else:
                     if linecontent == self.LineType.ATOMS:
                         s = line.split()
-                        step_atoms.append(
-                            (int(s[0]),
-                             Atom(
+                        ids.append(int(s[0]))
+                        step_atoms.append(Atom(
                                  self.atomname[int(s[1]) - 1],
-                                 tuple(map(float, s[2: 5])))))
+                                 tuple(map(float, s[2: 5]))))
                     elif linecontent == self.LineType.BOX:
                         s = line.split()
                         boxsize.append(float(s[1])-float(s[0]))
         # sort by ID
-        _, step_atoms = zip(*sorted(step_atoms, key=lambda a: a[0]))
+        step_atoms = [x for (y,x) in sorted(zip(ids, step_atoms))]
         step_atoms = Atoms(step_atoms, cell=boxsize, pbc=self.pbc)
-        return step_atoms
+        return step_atoms, ids
 
     class LineType(Enum):
         """Line type in the LAMMPS dump files."""
