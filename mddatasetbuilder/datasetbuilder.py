@@ -117,7 +117,7 @@ class DatasetBuilder:
             results = pool.imap_unordered(
                 self.bonddetector.readatombondtype,
                 self._produce(semaphore, enumerate((self.lineiter(self.bonddetector), self.erroriter(
-                )) if self.errorfilename is not None else self.lineiter(self.bonddetector)), (errorfilename is not None)),
+                )) if self.errorfilename is not None else self.lineiter(self.bonddetector)), (self.errorfilename is not None)),
                 100)
             nstep = 0
             for d, step in tqdm(
