@@ -18,16 +18,18 @@ from tqdm import tqdm
 import mddatasetbuilder
 
 
+this_directory = os.getcwd()
 class TestMDDatasetBuilder:
     """Test MDDatasetBuilder."""
 
-    def test_datasetbuilder(self):
+    @pytest.fixture(params=json.load(
+        pkg_resources.resource_stream(__name__, 'test.json')))
+    def test_datasetbuilder(self, request):
         """Test DatasetBuilder."""
-        folder = tempfile.mkdtemp(prefix='testfiles-', dir='.')
+        folder = tempfile.mkdtemp(prefix='testfiles-', dir=this_directory)
         logging.info(f'Folder: {folder}:')
         os.chdir(folder)
-        testparms = json.load(
-            pkg_resources.resource_stream(__name__, 'test.json'))
+        testparms = request.param
         # download bonds.reaxc and dump.reaxc
         for fileparms in (testparms["bondfile"], testparms["dumpfile"]):
             self._download_file(fileparms["url"],
@@ -35,7 +37,7 @@ class TestMDDatasetBuilder:
                                 fileparms["sha256"])
 
         d = mddatasetbuilder.DatasetBuilder(
-            bondfilename=testparms["bondfile"]["filename"],
+            bondfilename=testparms["bondfile"]["filename"] if "bondfile" in testparms else None,
             dumpfilename=testparms["dumpfile"]["filename"],
             atomname=testparms["atomname"],
             dataset_name=testparms["dataset_name"],
@@ -102,4 +104,6 @@ class TestMDDatasetBuilder:
         if sha256 == sha256_check:
             return True
         logging.warning("SHA256 is not correct.")
+        return False
+logging.warning("SHA256 is not correct.")
         return False
