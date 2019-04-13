@@ -405,7 +405,7 @@ class DatasetBuilder:
         return pickle.loads(cls._decompress(x, isbytes=True))
 
     def lineiter(self, detector):
-        f = open(detector)
+        f = open(detector.filename)
         it = itertools.islice(itertools.zip_longest(
             *[f] * detector.steplinenum), 0, None, self.stepinterval)
         for line in it:
