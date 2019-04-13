@@ -425,10 +425,10 @@ class DatasetBuilder:
 
 def _commandline():
     parser = argparse.ArgumentParser(description='MDDatasetBuilder')
-    parser.add_argument('-d', '--dumpfile',
+    parser.add_argument('-d', '--dumpfile', nargs='*',
                         help='Input dump file, e.g. dump.reaxc', required=True)
     parser.add_argument(
-        '-b', '--bondfile', help='Input bond file, e.g. bonds.reaxc')
+        '-b', '--bondfile', nargs='*', help='Input bond file, e.g. bonds.reaxc')
     parser.add_argument('-a', '--atomname',
                         help='Atomic names in the trajectory, e.g. C H O',
                         nargs='*', required=True)
@@ -460,28 +460,5 @@ def _commandline():
         stepinterval=args.interval, n_clusters=args.size,
         qmkeywords=args.qmkeywords, nproc=args.nproc,
         errorfilename=args.errorfile, errorlimit=args.errorlimit
-<<<<<<< HEAD
-        ).builddataset()
-rlimit
-        ).builddataset()
-ile, errorlimit=args.errorlimit
-        ).builddataset()
-=======
     ).builddataset()
->>>>>>> f5b8428d9542839d452f82564bf92e870880da87
- args = parser.parse_args()
-    DatasetBuilder(
-        atomname=args.atomname, bondfilename=args.bondfile,
-        dumpfilename=args.dumpfile, dataset_name=args.name, cutoff=args.cutoff,
-        stepinterval=args.interval, n_clusters=args.size,
-        qmkeywords=args.qmkeywords, nproc=args.nproc,
-        errorfilename=args.errorfile, errorlimit=args.errorlimit
-<<<<<<< HEAD
-        ).builddataset()
-rlimit
-        ).builddataset()
-ile, errorlimit=args.errorlimit
-        ).builddataset()
-=======
-    ).builddataset()
->>>>>>> f5b8428d9542839d452f82564bf92e870880da87
+
