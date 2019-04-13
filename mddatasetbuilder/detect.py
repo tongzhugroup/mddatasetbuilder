@@ -2,6 +2,7 @@
 import pickle
 from abc import ABCMeta, abstractmethod
 from enum import Enum, auto
+from collections import defaultdict
 
 import openbabel
 import numpy as np
