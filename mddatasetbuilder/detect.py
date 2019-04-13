@@ -137,7 +137,7 @@ class DetectDump(Detect):
 
     def readmolecule(self, lines):
         bond = [None]*self._N
-        step_atoms = self.readcrd(((item, None), None))
+        step_atoms = self.readcrd(((lines, None), None))
         bond = self._crd2bond(step_atoms, readlevel=False)
         molecules = connectmolecule(bond)
         # return atoms as well
