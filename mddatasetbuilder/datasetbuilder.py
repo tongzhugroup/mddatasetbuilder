@@ -326,7 +326,7 @@ class DatasetBuilder:
                 step_atoms = self.crddetector.readcrd(((step, lines[0]), None))
                 molecules = self.bonddetector.readmolecule(lines[1])
             else:
-                molecules, step_atoms = self.crddetector.readcrd(((step, lines), None))
+                molecules, step_atoms = self.bonddetector.readmolecule(lines[1])
             for atoma, trajatomfilename, itype, itotal in self.dstep[step]:
                 # update counter
                 folder = str(itotal//1000).zfill(self.foldermaxlength)
