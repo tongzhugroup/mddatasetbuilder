@@ -39,13 +39,4 @@
         "dataset_name": "h2",
         "stepinterval": 10
     }
-]7263a7fed7eb6ae9f76a884222290bcdea8d58bf9751f52c77f150859215e",
-        "filename": "dump.reaxc"
-    },
-    "atomname": [
-        "H",
-        "O"
-    ],
-    "dataset_name":"h2",
-    "stepinterval":10
-}
+]
