@@ -4,6 +4,7 @@ from abc import ABCMeta, abstractmethod
 from enum import Enum, auto
 
 import openbabel
+import numpy as np
 from .dps import dps as connectmolecule
 
 
