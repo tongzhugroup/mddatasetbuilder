@@ -98,22 +98,23 @@ class DetectDump(Detect):
     def _readN(self):
         # copy from reacnetgenerator on 2018-12-15
         iscompleted = False
-        for index, line in enumerate(f):
-            if line.startswith("ITEM:"):
-                linecontent = self.LineType.linecontent(line)
-            else:
-                if linecontent == self.LineType.NUMBER:
-                    if iscompleted:
-                        stepbindex = index
-                        break
-                    else:
-                        iscompleted = True
-                        stepaindex = index
-                    N = int(line.split()[0])
-                    atomtype = np.zeros(N, dtype=int)
-                elif linecontent == self.LineType.ATOMS:
-                    s = line.split()
-                    atomtype[int(s[0])-1] = int(s[1])-1
+        with open(self.filename) as f:
+            for index, line in enumerate(f):
+                if line.startswith("ITEM:"):
+                    linecontent = self.LineType.linecontent(line)
+                else:
+                    if linecontent == self.LineType.NUMBER:
+                        if iscompleted:
+                            stepbindex = index
+                            break
+                        else:
+                            iscompleted = True
+                            stepaindex = index
+                        N = int(line.split()[0])
+                        atomtype = np.zeros(N, dtype=int)
+                    elif linecontent == self.LineType.ATOMS:
+                        s = line.split()
+                        atomtype[int(s[0])-1] = int(s[1])-1
         steplinenum = stepbindex-stepaindex
         self._N = N
         self.atomtype = atomtype
