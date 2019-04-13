@@ -25,7 +25,7 @@ class TestMDDatasetBuilder:
 
     @pytest.fixture(params=json.load(
         pkg_resources.resource_stream(__name__, 'test.json')))
-    def test_datasetbuilder(self, request):
+    def datasetbuilder(self, request):
         """Test DatasetBuilder."""
         folder = tempfile.mkdtemp(prefix='testfiles-', dir=this_directory)
         logging.info(f'Folder: {folder}:')
@@ -37,15 +37,16 @@ class TestMDDatasetBuilder:
                                 fileparms["filename"],
                                 fileparms["sha256"])
 
-        d = mddatasetbuilder.DatasetBuilder(
+        return mddatasetbuilder.DatasetBuilder(
             bondfilename=testparms["bondfile"]["filename"] if "bondfile" in testparms else None,
             dumpfilename=testparms["dumpfile"]["filename"],
             atomname=testparms["atomname"],
             dataset_name=testparms["dataset_name"],
             stepinterval=testparms["stepinterval"]
             if "stepinterval" in testparms else 1)
-        d.builddataset()
 
+    def test_datasetbuilder(self, datasetbuilder):
+        datasetbuilder.builddataset()
         assert os.path.exists(d.gjfdir)
 
     def _download_file(self, urls, pathfilename, sha256):
