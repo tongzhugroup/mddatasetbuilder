@@ -33,9 +33,9 @@ class TestMDDatasetBuilder:
         testparms = request.param
         # download bonds.reaxc and dump.reaxc
         for fileparms in ((testparms["bondfile"], testparms["dumpfile"]) if "bondfile" in testparms else (testparms["dumpfile"],)):
-                self._download_file(fileparms["url"],
-                                    fileparms["filename"],
-                                    fileparms["sha256"])
+            self._download_file(fileparms["url"],
+                                fileparms["filename"],
+                                fileparms["sha256"])
 
         d = mddatasetbuilder.DatasetBuilder(
             bondfilename=testparms["bondfile"]["filename"] if "bondfile" in testparms else None,
