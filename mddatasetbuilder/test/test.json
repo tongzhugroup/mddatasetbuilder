@@ -37,6 +37,6 @@
             "O"
         ],
         "dataset_name": "h2",
-        "stepinterval": 10
+        "stepinterval": 1000
     }
 ]
