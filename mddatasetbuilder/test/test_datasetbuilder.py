@@ -105,5 +105,3 @@ class TestMDDatasetBuilder:
             return True
         logging.warning("SHA256 is not correct.")
         return False
-logging.warning("SHA256 is not correct.")
-        return False
