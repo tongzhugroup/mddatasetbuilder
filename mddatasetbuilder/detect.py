@@ -51,7 +51,7 @@ class DetectBond(Detect):
     def _readN(self):
         """Read bondfile N, which should be at very beginning."""
         # copy from reacnetgenerator on 2018-12-15
-        with open(self.filename) as f:
+        with open(self.filename if isinstance(self.filename, str) else self.filename[0]) as f:
             iscompleted = False
             for index, line in enumerate(f):
                 if line.startswith("#"):
@@ -104,7 +104,7 @@ class DetectDump(Detect):
     def _readN(self):
         # copy from reacnetgenerator on 2018-12-15
         iscompleted = False
-        with open(self.filename) as f:
+        with open(self.filename if isinstance(self.filename, str) else self.filename[0]) as f:
             for index, line in enumerate(f):
                 if line.startswith("ITEM:"):
                     linecontent = self.LineType.linecontent(line)

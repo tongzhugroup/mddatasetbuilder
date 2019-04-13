@@ -116,7 +116,7 @@ class DatasetBuilder:
             semaphore = Semaphore(360)
             results = pool.imap_unordered(
                 self.bonddetector.readatombondtype,
-                self._produce(semaphore, enumerate((self.lineiter(self.bonddetector), self.erroriter(
+                self._produce(semaphore, enumerate(zip(self.lineiter(self.bonddetector), self.erroriter(
                 )) if self.errorfilename is not None else self.lineiter(self.bonddetector)), (self.errorfilename is not None)),
                 100)
             nstep = 0
