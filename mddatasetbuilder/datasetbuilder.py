@@ -54,12 +54,12 @@ class DatasetBuilder:
         atomname = np.array(
             atomname) if atomname else np.array(["C", "H", "O"])
         self.crddetector = Detect.gettype('dump')(
-            filename=dumpfilename, atomname=atomname)
+            filename=dumpfilename, atomname=atomname, pbc=pbc)
         if bondfilename is None:
             self.bonddetector = self.crddetector
         else:
             self.bonddetector = Detect.gettype('bond')(
-                filename=bondfilename, atomname=atomname)
+                filename=bondfilename, atomname=atomname, pbc=pbc)
 
         self.dataset_dir = f"dataset_{dataset_name}"
         self.xyzfilename = dataset_name
@@ -72,7 +72,6 @@ class DatasetBuilder:
         self.writegjf = True
         self.gjfdir = f'{self.dataset_dir}_gjf'
         self.qmkeywords = qmkeywords
-        self.pbc = pbc
         self.fragment = fragment
         self._coulumbdiag = dict(map(lambda symbol: (
             symbol, atomic_numbers[symbol]**2.4/2), atomname))
