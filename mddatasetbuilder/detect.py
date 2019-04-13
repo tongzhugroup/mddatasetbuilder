@@ -31,9 +31,9 @@ class Detect(metaclass=ABCMeta):
     def gettype(inputtype):
         """Get the class for the input file type."""
         if inputtype == 'bond':
-            detectclass = _DetectBond
+            detectclass = DetectBond
         elif inputtype == 'dump':
-            detectclass = _DetectDump
+            detectclass = DetectDump
         else:
             raise RuntimeError("Wrong input file type")
         return detectclass
