@@ -13,6 +13,7 @@ import tempfile
 
 import pkg_resources
 import requests
+import pytest
 from tqdm import tqdm
 
 import mddatasetbuilder
