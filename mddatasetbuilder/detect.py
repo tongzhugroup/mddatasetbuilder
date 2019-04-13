@@ -16,6 +16,7 @@ class Detect(metaclass=ABCMeta):
         self.atomname = atomname
         self.pbc = pbc
         self.steplinenum = self._readN()
+        print(self.atomnames, self.atomtype)
 
     @abstractmethod
     def _readN(self):
@@ -118,7 +119,7 @@ class DetectDump(Detect):
                         atomtype = np.zeros(N, dtype=int)
                     elif linecontent == self.LineType.ATOMS:
                         s = line.split()
-                        atomtype[int(s[0])-1] = int(s[1])-1
+                        atomtype[int(s[0])-1] = int(s[1])
         steplinenum = stepbindex-stepaindex
         self._N = N
         self.atomtype = atomtype
