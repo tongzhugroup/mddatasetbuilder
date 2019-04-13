@@ -197,8 +197,6 @@ class DetectDump(Detect):
                     elif linecontent == self.LineType.BOX:
                         s = line.split()
                         boxsize.append(float(s[1])-float(s[0]))
-                    elif linecontent == self.LineType.TIMESTEP:
-                        timestep = step, int(line.split()[0])
         # sort by ID
         _, step_atoms = zip(*sorted(step_atoms, key=lambda a: a[0]))
         step_atoms = Atoms(step_atoms, cell=boxsize, pbc=self.pbc)
