@@ -136,10 +136,10 @@ class DetectDump(Detect):
         d = defaultdict(list)
         step_atoms, ids = self.readcrd(item)
         if needlerror:
-            lerror = [x for (y,x) in sorted(zip(ids, lerror))]
+            lerror = [x for (y, x) in sorted(zip(ids, lerror))]
         level = self._crd2bond(step_atoms, readlevel=True)
         for i, (n, l) in enumerate(zip(self.atomnames, level)):
-            if not needlerror or lerror[i]>self.errorlimit:
+            if not needlerror or lerror[i] > self.errorlimit:
                 # Note that atom id starts from 1
                 d[pickle.dumps((n, sorted(l)))].append(i+1)
         return d, step
@@ -203,13 +203,13 @@ class DetectDump(Detect):
                         s = line.split()
                         ids.append(int(s[0]))
                         step_atoms.append(Atom(
-                                 self.atomname[int(s[1]) - 1],
-                                 tuple(map(float, s[2: 5]))))
+                            self.atomname[int(s[1]) - 1],
+                            tuple(map(float, s[2: 5]))))
                     elif linecontent == self.LineType.BOX:
                         s = line.split()
                         boxsize.append(float(s[1])-float(s[0]))
         # sort by ID
-        step_atoms = [x for (y,x) in sorted(zip(ids, step_atoms))]
+        step_atoms = [x for (y, x) in sorted(zip(ids, step_atoms))]
         step_atoms = Atoms(step_atoms, cell=boxsize, pbc=self.pbc)
         return step_atoms, ids
 
