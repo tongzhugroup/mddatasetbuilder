@@ -277,7 +277,7 @@ class DatasetBuilder:
                 bonditer = self.lineiter(self.bonddetector)
                 lineiter = zip(crditer, bonditer)
             results = pool.imap_unordered(self._writestepxyzfile, self._produce(
-                semaphore, enumerate(bonditer), None), 100)
+                semaphore, enumerate(lineiter), None), 100)
             for result in results:
                 pbar.update(result)
                 semaphore.release()
