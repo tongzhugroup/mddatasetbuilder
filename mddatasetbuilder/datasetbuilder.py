@@ -117,7 +117,7 @@ class DatasetBuilder:
             semaphore = Semaphore(360)
             results = pool.imap_unordered(
                 self.bonddetector.readatombondtype, self._produce(semaphore,
-                    enumerate(self.lineiter(self.bonddetector)), None),
+                                                                  enumerate(self.lineiter(self.bonddetector)), None),
                 100)
             nstep = 0
             for d, step in tqdm(
@@ -155,7 +155,7 @@ class DatasetBuilder:
                 semaphore = Semaphore(360)
                 results = pool.imap_unordered(
                     self._writestepmatrix, self._produce(semaphore,
-                        enumerate(self.lineiter(self.crddetector)), None), 100)
+                                                         enumerate(self.lineiter(self.crddetector)), None), 100)
                 j = 0
                 for result in tqdm(
                         results, desc=trajatomfilename, total=self._nstep,
