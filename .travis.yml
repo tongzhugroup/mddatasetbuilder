@@ -4,8 +4,5 @@ services: docker
 cache:
   directories:
   - $HOME/.cache/pip
-install:
-  - docker pull continuumio/miniconda3
-  - docker run -i -t -v ~/.cache/pip:/root/.cache/pip continuumio/miniconda3 /bin/bash -c "pip install tox-conda"
-script:
-  - docker run -i -t -v $(pwd):/project -v ~/.cache/pip:/root/.cache/pip continuumio/miniconda3 /bin/bash -c "cd /project && tox -e py37"
+install: docker pull continuumio/miniconda3
+script: docker run -i -t -v $(pwd):/project -v ~/.cache/pip:/root/.cache/pip continuumio/miniconda3 /bin/bash -c "pip install tox-conda && cd /project && tox -e py37"
