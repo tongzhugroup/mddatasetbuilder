@@ -21,7 +21,8 @@
             "O"
         ],
         "dataset_name": "h2",
-        "stepinterval": 10
+        "stepinterval": 10,
+        "size":10
     },
     {
         "dumpfile": {
@@ -37,6 +38,7 @@
             "O"
         ],
         "dataset_name": "h2",
-        "stepinterval": 1000
+        "stepinterval": 1000,
+		"size":10
     }
 ]

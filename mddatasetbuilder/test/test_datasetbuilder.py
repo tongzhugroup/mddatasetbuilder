@@ -43,6 +43,7 @@ class TestMDDatasetBuilder:
             bondfilename=testparms["bondfile"]["filename"] if "bondfile" in testparms else None,
             dumpfilename=testparms["dumpfile"]["filename"],
             atomname=testparms["atomname"],
+            n_clusters=testparms["size"],
             dataset_name=testparms["dataset_name"],
             stepinterval=testparms["stepinterval"]
             if "stepinterval" in testparms else 1)
