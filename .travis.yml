@@ -1,10 +1,11 @@
 language: c
 os: linux
-env: PYTHON_VERSION=3.7 PIP_DEPENDENCIES="tox-conda tox-travis" CONDA_CHANNEL_PRIORITY=True CONDA_CHANNELS="conda-forge"
+services: docker
 cache:
   directories:
   - $HOME/.cache/pip
 install:
-  - git clone --depth 1 git://github.com/astropy/ci-helpers.git && source ci-helpers/travis/setup_conda.sh
+  - docker pull continuumio/miniconda3
+  - docker run -i -t continuumio/miniconda3 -v ~/.cache/pip:/root/.cache/pip /bin/bash -c "pip install tox-conda"
 script:
-  - tox -e py37
+  - docker run -i -t continuumio/miniconda3 -v $(pwd):/project -v ~/.cache/pip:/root/.cache/pip /bin/bash -c "cd /project && tox -e py37"
