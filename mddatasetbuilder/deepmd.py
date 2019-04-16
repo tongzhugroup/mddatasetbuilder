@@ -8,6 +8,7 @@ from collections import Counter
 import numpy as np
 from ase.data import atomic_numbers, chemical_symbols
 from ase.units import Ang, Bohr, Hartree, eV
+from tqdm import tqdm
 
 from gaussianrunner import GaussianAnalyst
 
@@ -38,10 +39,13 @@ class PrepareDeePMD(object):
         self._writejson()
 
     def _searchpath(self):
+        logfiles = []
         for root, _, files in os.walk(self.data_path):
             for logfile in files:
                 if logfile.endswith(".log"):
-                    self._praparedeepmdforLOG(os.path.join(root, logfile))
+                    logfiles.append(os.path.join(root, logfile))
+        for f in tqdm(logfiles):
+            self._praparedeepmdforLOG(f)
 
     def _praparedeepmdforLOG(self, logfilename):
         read_properties = GaussianAnalyst(properties=[
