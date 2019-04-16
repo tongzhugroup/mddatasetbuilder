@@ -66,7 +66,7 @@ class PrepareDeePMD(object):
                 [f"{symbol}{n_ele[atomic_numbers[symbol]]}"
                  for symbol in self.atomname])
             path = os.path.join(self.deepmd_dir, f"data_{name}")
-            return energy, atomic_number, coord, force, id_sorted, path 
+            return energy, atomic_number, coord, force, id_sorted, path
         else:
             return None
 
@@ -80,7 +80,7 @@ class PrepareDeePMD(object):
                 typefile.write(
                     " ".join(
                         (str(self.atomname.index(chemical_symbols[x]))
-                        for x in np.sort(atomic_number))))
+                         for x in np.sort(atomic_number))))
         with open(os.path.join(path, "coord.raw"), 'a') as coordfile, open(os.path.join(path, "force.raw"), 'a') as forcefile, open(os.path.join(path, "energy.raw"), 'a') as energyfile, open(os.path.join(path, "box.raw"), 'a') as boxfile, open(os.path.join(path, "virial.raw"), 'a') as virialfile:
             coordfile.write(
                 f"{' '.join((str(x) for x in coord[id_sorted].flatten()))}\n")
