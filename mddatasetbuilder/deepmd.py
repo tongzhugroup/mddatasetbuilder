@@ -4,6 +4,7 @@ import argparse
 import json
 import os
 from collections import Counter
+from multiprocessing import Pool
 
 import numpy as np
 from ase.data import atomic_numbers, chemical_symbols
@@ -40,14 +41,16 @@ class PrepareDeePMD(object):
 
     def _searchpath(self):
         logfiles = []
-        for root, _, files in os.walk(self.data_path):
+        for root, _, files in tqdm(os.walk(self.data_path)):
             for logfile in files:
                 if logfile.endswith(".log"):
                     logfiles.append(os.path.join(root, logfile))
-        for f in tqdm(logfiles):
-            self._praparedeepmdforLOG(f)
+        with Pool() as pool:
+            for result in pool.imap_unordered(self._preparedeepmdforLOG, tqdm(logfiles)):
+                if result:
+                    self._handleLOG(result)
 
-    def _praparedeepmdforLOG(self, logfilename):
+    def _preparedeepmdforLOG(self, logfilename):
         read_properties = GaussianAnalyst(properties=[
             'energy', 'atomic_number', 'coordinate', 'force']).readFromLOG(logfilename)
         energy = read_properties['energy']
@@ -63,23 +66,29 @@ class PrepareDeePMD(object):
                 [f"{symbol}{n_ele[atomic_numbers[symbol]]}"
                  for symbol in self.atomname])
             path = os.path.join(self.deepmd_dir, f"data_{name}")
-            if not os.path.exists(path):
-                os.makedirs(path)
-                self.system_paths.append(path)
-                self.batch_size.append(max(32//atomic_number.size, 1))
-                with open(os.path.join(path, "type.raw"), 'w') as typefile:
-                    typefile.write(
-                        " ".join(
-                            (str(self.atomname.index(chemical_symbols[x]))
-                             for x in np.sort(atomic_number))))
-            with open(os.path.join(path, "coord.raw"), 'a') as coordfile, open(os.path.join(path, "force.raw"), 'a') as forcefile, open(os.path.join(path, "energy.raw"), 'a') as energyfile, open(os.path.join(path, "box.raw"), 'a') as boxfile, open(os.path.join(path, "virial.raw"), 'a') as virialfile:
-                coordfile.write(
-                    f"{' '.join((str(x) for x in coord[id_sorted].flatten()))}\n")
-                forcefile.write(
-                    f"{' '.join((str(x) for x in force[id_sorted].flatten()))}\n")
-                energyfile.write(f"{energy}\n")
-                boxfile.write(self.lattcie)
-                virialfile.write(self.virial)
+            return energy, atomic_number, coord, force, id_sorted, path 
+        else:
+            return None
+
+    def _handleLOG(self, result):
+        energy, atomic_number, coord, force, id_sorted, path = result
+        if not os.path.exists(path):
+            os.makedirs(path)
+            self.system_paths.append(path)
+            self.batch_size.append(max(32//atomic_number.size, 1))
+            with open(os.path.join(path, "type.raw"), 'w') as typefile:
+                typefile.write(
+                    " ".join(
+                        (str(self.atomname.index(chemical_symbols[x]))
+                        for x in np.sort(atomic_number))))
+        with open(os.path.join(path, "coord.raw"), 'a') as coordfile, open(os.path.join(path, "force.raw"), 'a') as forcefile, open(os.path.join(path, "energy.raw"), 'a') as energyfile, open(os.path.join(path, "box.raw"), 'a') as boxfile, open(os.path.join(path, "virial.raw"), 'a') as virialfile:
+            coordfile.write(
+                f"{' '.join((str(x) for x in coord[id_sorted].flatten()))}\n")
+            forcefile.write(
+                f"{' '.join((str(x) for x in force[id_sorted].flatten()))}\n")
+            energyfile.write(f"{energy}\n")
+            boxfile.write(self.lattcie)
+            virialfile.write(self.virial)
 
     def _raw2np(self):
         for i, system_path in enumerate(self.system_paths):
