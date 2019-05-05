@@ -29,7 +29,8 @@ MDDatasetBuilder is a script to build molecular dynamics (MD) datasets for neura
 [pybase64](https://github.com/mayeut/pybase64)
 * Software:
 [Gaussian 16](http://gaussian.com/),
-[DeePMD](https://github.com/deepmodeling/deepmd-kit)
+[DeePMD](https://github.com/deepmodeling/deepmd-kit),
+[OpenBabel](https://github.com/openbabel/openbabel)
 
 ## Installation
 
