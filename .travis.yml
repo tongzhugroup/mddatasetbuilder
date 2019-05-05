@@ -1,6 +1,5 @@
 language: c
 os: linux
-services: docker
 cache:
   directories:
   - $HOME/.cache/pip
