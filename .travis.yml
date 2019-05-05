@@ -4,5 +4,6 @@ services: docker
 cache:
   directories:
   - $HOME/.cache/pip
-install: docker pull njzjz/tox
-script: docker run -i -t -v $(pwd):/project -v ~/.cache/pip:/root/.cache/pip --env-file <(env | grep 'TRAVIS\|CI') njzjz/tox /bin/bash -c "chown -R root /root/.cache && cd /project && tox -e py37"
+env: PYTHON_VERSION=3.7 PIP_DEPENDENCIES="tox-conda tox-travis" CONDA_CHANNEL_PRIORITY=True CONDA_CHANNELS="conda-forge"
+install: git clone --depth 1 git://github.com/astropy/ci-helpers.git && source ci-helpers/travis/setup_conda.sh
+script: tox -e py37
