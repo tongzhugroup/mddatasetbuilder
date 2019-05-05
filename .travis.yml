@@ -5,4 +5,4 @@ cache:
   directories:
   - $HOME/.cache/pip
 install: docker pull njzjz/tox
-script: travis-wait docker run -i -t -v $(pwd):/project -v ~/.cache/pip:/root/.cache/pip --env-file <(env | grep 'TRAVIS\|CI') njzjz/tox /bin/bash -c "chown -R root /root/.cache && cd /project && tox -e py37"
+script: travis_wait docker run -i -t -v $(pwd):/project -v ~/.cache/pip:/root/.cache/pip --env-file <(env | grep 'TRAVIS\|CI') njzjz/tox /bin/bash -c "chown -R root /root/.cache && cd /project && tox -e py37"
