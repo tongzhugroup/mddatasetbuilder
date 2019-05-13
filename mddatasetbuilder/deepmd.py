@@ -64,7 +64,7 @@ class PrepareDeePMD:
         atomic_number = read_properties['atomic_number']
         coord = read_properties['coordinate']
         force = read_properties['force']
-        if (energy and atomic_number and coord and force) is not None:
+        if energy is not None and atomic_number is not None and coord is not None and force is not None:
             energy *= Hartree/eV
             force *= (Hartree/Bohr)/(eV/Ang)
             id_sorted = np.argsort(atomic_number)
