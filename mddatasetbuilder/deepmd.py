@@ -3,6 +3,7 @@
 import argparse
 import json
 import os
+import pickle
 from collections import Counter
 from multiprocessing import Pool
 
@@ -14,13 +15,14 @@ from tqdm import tqdm
 from gaussianrunner import GaussianAnalyst
 
 
-class PrepareDeePMD(object):
+class PrepareDeePMD:
     """Prepare DeePMD training files."""
 
     def __init__(
             self, data_path, atomname, deepmd_dir="data",
             jsonfilename=os.path.join("train", "train.json"),
-            lattice="100 0 0 0 100 0 0 0 100", virial="0 0 0 0 0 0 0 0 0"):
+            lattice="100 0 0 0 100 0 0 0 100", virial="0 0 0 0 0 0 0 0 0",
+            nologs=False):
         """Init the class."""
         self.data_path = data_path
         self.atomname = atomname
@@ -32,6 +34,7 @@ class PrepareDeePMD(object):
         self.set_prefix = "set"
         self.setdir = f"{self.set_prefix}.000"
         self.jsonfilename = jsonfilename
+        self.nologs = nologs
 
     def praparedeepmd(self):
         """Prepare the dataset."""
@@ -43,7 +46,7 @@ class PrepareDeePMD(object):
         logfiles = []
         for root, _, files in tqdm(os.walk(self.data_path)):
             for logfile in files:
-                if logfile.endswith(".log"):
+                if logfile.endswith(".out" if self.nologs else ".log"):
                     logfiles.append(os.path.join(root, logfile))
         with Pool() as pool:
             for result in pool.imap_unordered(self._preparedeepmdforLOG, tqdm(logfiles)):
@@ -51,13 +54,17 @@ class PrepareDeePMD(object):
                     self._handleLOG(result)
 
     def _preparedeepmdforLOG(self, logfilename):
-        read_properties = GaussianAnalyst(properties=[
-            'energy', 'atomic_number', 'coordinate', 'force']).readFromLOG(logfilename)
+        if self.nologs:
+            with open(logfilename, 'rb') as f:
+                read_properties = pickle.load(f)
+        else:
+            read_properties = GaussianAnalyst(properties=[
+                'energy', 'atomic_number', 'coordinate', 'force']).readFromLOG(logfilename)
         energy = read_properties['energy']
         atomic_number = read_properties['atomic_number']
         coord = read_properties['coordinate']
         force = read_properties['force']
-        if energy is not None and atomic_number is not None and coord is not None and force is not None:
+        if (energy and atomic_number and coord and force) is not None:
             energy *= Hartree/eV
             force *= (Hartree/Bohr)/(eV/Ang)
             id_sorted = np.argsort(atomic_number)
@@ -163,6 +170,8 @@ def _commandline():
     parser.add_argument('-a', '--atomname',
                         help='Atomic names in the trajectory, e.g. C H O',
                         nargs='*', required=True)
+    parser.add_argument(
+        '--nologs', help='Read out files instead of logs', action="store_true")
     args = parser.parse_args()
     PrepareDeePMD(data_path=args.path, deepmd_dir=args.dir,
-                  atomname=args.atomname).praparedeepmd()
+                  atomname=args.atomname, nologs=args.nologs).praparedeepmd()
