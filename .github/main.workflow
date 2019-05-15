@@ -23,3 +23,12 @@ action "upload" {
   ]
   needs = "sdist"
 }
+
+workflow "Test with tox" {
+  on = "push"
+  resolves = ["njzjz/actions"]
+}
+
+action "njzjz/actions" {
+  uses = "njzjz/actions/tox-conda@5dbb49c"
+}
