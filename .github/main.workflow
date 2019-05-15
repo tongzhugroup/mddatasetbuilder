@@ -24,7 +24,7 @@ action "upload" {
   needs = "sdist"
 }
 
-workflow "Test with tox" {
+workflow "Test" {
   on = "push"
   resolves = ["njzjz/actions"]
 }
