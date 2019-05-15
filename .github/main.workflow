@@ -29,6 +29,6 @@ workflow "Test with tox" {
   resolves = ["njzjz/actions"]
 }
 
-action "njzjz/actions" {
+action "Test with tox" {
   uses = "njzjz/actions/tox-conda@5dbb49c"
 }
