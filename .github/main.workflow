@@ -26,7 +26,7 @@ action "upload" {
 
 workflow "Test" {
   on = "push"
-  resolves = ["njzjz/actions"]
+  resolves = ["Test with tox"]
 }
 
 action "Test with tox" {
