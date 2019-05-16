@@ -1,8 +1,0 @@
-language: c
-os: linux
-cache:
-  directories:
-  - $HOME/.cache/pip
-env: PYTHON_VERSION=3.7 CONDA_DEPENDENCIES="tox-conda" CONDA_CHANNEL_PRIORITY=True CONDA_CHANNELS="conda-forge"
-install: git clone --depth 1 git://github.com/astropy/ci-helpers.git && source ci-helpers/travis/setup_conda.sh
-script: tox -e py37
