@@ -44,7 +44,7 @@ class PrepareDeePMD:
 
     def _searchpath(self):
         logfiles = []
-        for root, _, files in tqdm(os.walk(self.data_path)):
+        for root, _, files in tqdm(os.walk(self.data_path, followlinks = True)):
             for logfile in files:
                 if logfile.endswith(".out" if self.nologs else ".log"):
                     logfiles.append(os.path.join(root, logfile))
