@@ -153,8 +153,7 @@ class DetectDump(Detect):
         # return atoms as well
         return molecules, step_atoms
 
-    @classmethod
-    def _crd2bond(cls, step_atoms, readlevel):
+    def _crd2bond(self, step_atoms, readlevel):
         # copy from reacnetgenerator on 2019/4/13
         atomnumber = len(step_atoms)
         ghosts = {}
