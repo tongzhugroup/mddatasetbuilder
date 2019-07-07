@@ -153,14 +153,13 @@ class DetectDump(Detect):
         # return atoms as well
         return molecules, step_atoms
 
-    def _crd2bond(self, step_atoms, readlevel):
+    @classmethod
+    def _crd2bond(cls, step_atoms, readlevel):
         # copy from reacnetgenerator on 2019/4/13
         atomnumber = len(step_atoms)
         ghosts = {}
-        if self.pbc:
+        if step_atoms.pbc.any():
             # Apply period boundry conditions
-            step_atoms.set_pbc(True)
-            step_atoms.set_cell(cell)
             # add ghost atoms
             repeated_atoms = step_atoms.repeat(2)[atomnumber:]
             tree = cKDTree(step_atoms.get_positions())
