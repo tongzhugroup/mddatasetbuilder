@@ -166,7 +166,7 @@ class DetectDump(Detect):
             repeated_atoms = step_atoms.repeat(2)[atomnumber:]
             tree = cKDTree(step_atoms.get_positions())
             d = tree.query(repeated_atoms.get_positions(), k=1)[0]
-            nearest = d<5
+            nearest = d < 5
             ghost_atoms = repeated_atoms[nearest]
             realnumber = np.where(nearest)[0] % atomnumber
             step_atoms += ghost_atoms
