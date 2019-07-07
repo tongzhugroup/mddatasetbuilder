@@ -307,7 +307,7 @@ class DatasetBuilder:
                 atom.symbol, *atom.position), atoms_whole))
         else:
             kw0 = f'{self.qmkeywords[0]} guess=fragment={len(takenatomidindex)}'
-            multiplicities_str ="{} {}".format(multiplicity_whole_str, ' '.join(
+            multiplicities_str = "{} {}".format(multiplicity_whole_str, ' '.join(
                 [f'0 {multiplicity}' for multiplicity in multiplicities]))
             buff.extend((*chk, kw0, title, multiplicities_str))
             for index, atoms in enumerate(takenatomidindex, 1):
