@@ -157,7 +157,6 @@ class DetectDump(Detect):
     def _crd2bond(cls, step_atoms, readlevel):
         # copy from reacnetgenerator on 2019/4/13
         atomnumber = len(step_atoms)
-        ghosts = {}
         if step_atoms.pbc.any():
             # Apply period boundry conditions
             # add ghost atoms
