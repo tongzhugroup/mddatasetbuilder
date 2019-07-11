@@ -5,7 +5,7 @@ Run 'datasetbuilder -h' for more details.
 
 __author__ = "Jinzhe Zeng"
 __email__ = "jzzeng@stu.ecnu.edu.cn"
-__update__ = '2019-02-01'
+__update__ = '2019-07-11'
 __date__ = '2018-07-18'
 
 import argparse
@@ -45,7 +45,7 @@ class DatasetBuilder:
             self, atomname=None,
             clusteratom=None, bondfilename=None,
             dumpfilename="dump.reaxc", dataset_name="md", cutoff=5,
-            stepinterval=1, n_clusters=10000,
+            stepinterval=1, n_clusters=10000, n_each=1,
             qmkeywords="%nproc=4\n#mn15/6-31g(d,p) force", nproc=None, pbc=True,
             fragment=True, errorfilename=None, errorlimit=0.):
         """Init the builder."""
@@ -69,6 +69,7 @@ class DatasetBuilder:
         self.nproc = nproc if nproc else cpu_count()
         self.cutoff = cutoff
         self.n_clusters = n_clusters
+        self.n_each = n_each
         self.writegjf = True
         self.gjfdir = f'{self.dataset_dir}_gjf'
         self.qmkeywords = qmkeywords
@@ -183,7 +184,8 @@ class DatasetBuilder:
                     f"Max counter of {trajatomfilename} is {max_counter}")
             pool.close()
             choosedindexs = self._clusterdatas(
-                np.sort(feedvector), n_clusters=self.n_clusters)
+                np.sort(feedvector), n_clusters=self.n_clusters,
+                n_each=self.n_each)
             pool.join()
         else:
             stepatom = np.array([[u, vv]
@@ -224,24 +226,18 @@ class DatasetBuilder:
         return np.linalg.eigh(top)[0]
 
     @classmethod
-    def _clusterdatas(cls, X, n_clusters):
+    def _clusterdatas(cls, X, n_clusters, n_each=1):
         min_max_scaler = preprocessing.MinMaxScaler()
         X = np.array(min_max_scaler.fit_transform(X))
         clus = MiniBatchKMeans(n_clusters=n_clusters, init_size=(
             min(3*n_clusters, len(X))))
         labels = clus.fit_predict(X)
-        chooseindex = {}
-        choosenum = {}
-        for index, label in enumerate(labels):
-            if label in chooseindex:
-                r = np.random.randint(0, choosenum[label]+1)
-                if r == 0:
-                    chooseindex[label] = index
-                choosenum[label] += 1
-            else:
-                chooseindex[label] = index
-                choosenum[label] = 0
-        index = np.array(list(chooseindex.values()))
+        choosedidx = []
+        for i in range(n_clusters):
+            idx = np.where(labels == i)[0]
+            if idx.size:
+                choosedidx.append(np.random.choice(idx, n_each))
+        index = np.concatenate(choosedidx)
         return index
 
     @classmethod
