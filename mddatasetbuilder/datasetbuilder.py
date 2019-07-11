@@ -184,7 +184,8 @@ class DatasetBuilder:
                     f"Max counter of {trajatomfilename} is {max_counter}")
             pool.close()
             choosedindexs = self._clusterdatas(
-                np.sort(feedvector), n_clusters=self.n_clusters, n_each=self.n_each)
+                np.sort(feedvector), n_clusters=self.n_clusters,
+                n_each=self.n_each)
             pool.join()
         else:
             stepatom = np.array([[u, vv]
