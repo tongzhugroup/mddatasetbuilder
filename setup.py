@@ -23,6 +23,7 @@ if __name__ == '__main__':
                             'gaussianrunner>=1.0.20',
                             'tqdm', 'coloredlogs',
                             'pybase64', 'lz4',
+                            'dpdata>=0.1'
                             ],
           entry_points={
               'console_scripts': ['datasetbuilder=mddatasetbuilder.datasetbuilder:_commandline',
