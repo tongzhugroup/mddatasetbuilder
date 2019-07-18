@@ -29,7 +29,8 @@ class PrepareDeePMD:
         self.batch_size = []
         self.fmt = fmt
         self.suffix = suffix
-        self.jsonfilenames = [os.path.join(f"train{i}", f"train{i}.json") for i in range(jsonfilenumber)]
+        self.jsonfilenames = [os.path.join(
+            f"train{i}", f"train{i}.json") for i in range(jsonfilenumber)]
 
     def praparedeepmd(self):
         """Prepare the dataset."""
@@ -39,7 +40,7 @@ class PrepareDeePMD:
 
     def _searchpath(self):
         logfiles = []
-        for root, _, files in tqdm(os.walk(self.data_path, followlinks = True)):
+        for root, _, files in tqdm(os.walk(self.data_path, followlinks=True)):
             for logfile in files:
                 if logfile.endswith(self.suffix):
                     logfiles.append(os.path.join(root, logfile))
