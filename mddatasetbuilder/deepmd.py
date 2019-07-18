@@ -28,7 +28,8 @@ class PrepareDeePMD:
         self.batch_size = []
         self.fmt = fmt
         self.suffix = suffix
-        self.jsonfilenames = [os.path.join(f"train{i}", f"train{i}.json") for i in range(jsonfilenumber)]
+        self.jsonfilenames = [os.path.join(
+            f"train{i}", f"train{i}.json") for i in range(jsonfilenumber)]
 
     def praparedeepmd(self):
         """Prepare the dataset."""
@@ -38,7 +39,7 @@ class PrepareDeePMD:
 
     def _searchpath(self):
         logfiles = []
-        for root, _, files in tqdm(os.walk(self.data_path, followlinks = True)):
+        for root, _, files in tqdm(os.walk(self.data_path, followlinks=True)):
             for logfile in files:
                 if logfile.endswith(self.suffix):
                     logfiles.append(os.path.join(root, logfile))
@@ -49,11 +50,12 @@ class PrepareDeePMD:
         multi_systems.to_deepmd_npy(self.deepmd_dir)
         for formula, system in multi_systems.systems.items():
             self.system_paths.append(os.path.join(self.deepmd_dir, formula))
-            self.batch_size.append(min(max(32//(system["coords"].shape[1]), 1), system["coords"].shape[0]))
+            self.batch_size.append(
+                min(max(32//(system["coords"].shape[1]), 1), system["coords"].shape[0]))
         self.atomname = multi_systems.atom_names
 
     def _preparedeepmdforLOG(self, logfilename):
-        return dpdata.LabeledSystem(logfilename ,fmt = self.fmt)
+        return dpdata.LabeledSystem(logfilename, fmt=self.fmt)
 
     def _writejson(self, jsonfilename):
         jsonpath = os.path.dirname(jsonfilename)
@@ -129,4 +131,4 @@ def _commandline():
     args = parser.parse_args()
     PrepareDeePMD(data_path=args.path, deepmd_dir=args.dir,
                   jsonfilenumber=args.number
-                ).praparedeepmd()
+                  ).praparedeepmd()
