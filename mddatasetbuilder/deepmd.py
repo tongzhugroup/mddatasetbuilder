@@ -18,12 +18,11 @@ class PrepareDeePMD:
     """Prepare DeePMD training files."""
 
     def __init__(
-            self, data_path, atomname, deepmd_dir="data",
+            self, data_path, deepmd_dir="data",
             jsonfilenumber=1,
             fmt="gaussian/log", suffix=".log"):
         """Init the class."""
         self.data_path = data_path
-        self.atomname = atomname
         self.deepmd_dir = deepmd_dir
         self.system_paths = []
         self.batch_size = []
@@ -50,7 +49,8 @@ class PrepareDeePMD:
         multi_systems.to_deepmd_npy(self.deepmd_dir)
         for formula, system in multi_systems.systems.items():
             self.system_paths.append(os.path.join(self.deepmd_dir, formula))
-            self.batch_size.append(min(max(32//(system["coords"].shape[1]//3), 1), system["coords"].shape[0]))
+            self.batch_size.append(min(max(32//(system["coords"].shape[1]), 1), system["coords"].shape[0]))
+        self.atomname = multi_systems.atom_names
 
     def _preparedeepmdforLOG(self, logfilename):
         return dpdata.LabeledSystem(logfilename ,fmt = self.fmt)
@@ -124,13 +124,9 @@ def _commandline():
     parser.add_argument(
         '-p', '--path', help='Gaussian LOG file path, e.g. dataset_md_GJF',
         required=True)
-    parser.add_argument('-a', '--atomname',
-                        help='Atomic names in the trajectory, e.g. C H O',
-                        nargs='*', required=True)
     parser.add_argument('-n', '--number', type=int, default=1,
                         help="The number of train.json")
     args = parser.parse_args()
     PrepareDeePMD(data_path=args.path, deepmd_dir=args.dir,
-                  atomname=args.atomname,
                   jsonfilenumber=args.number
                 ).praparedeepmd()
