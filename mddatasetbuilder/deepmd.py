@@ -50,10 +50,11 @@ class PrepareDeePMD:
         multi_systems.to_deepmd_npy(self.deepmd_dir)
         for formula, system in multi_systems.systems.items():
             self.system_paths.append(os.path.join(self.deepmd_dir, formula))
-            self.batch_size.append(min(max(32//(system["coords"].shape[1]//3), 1), system["coords"].shape[0]))
+            self.batch_size.append(
+                min(max(32//(system["coords"].shape[1]//3), 1), system["coords"].shape[0]))
 
     def _preparedeepmdforLOG(self, logfilename):
-        return dpdata.LabeledSystem(logfilename ,fmt = self.fmt)
+        return dpdata.LabeledSystem(logfilename, fmt=self.fmt)
 
     def _writejson(self, jsonfilename):
         jsonpath = os.path.dirname(jsonfilename)
@@ -133,4 +134,4 @@ def _commandline():
     PrepareDeePMD(data_path=args.path, deepmd_dir=args.dir,
                   atomname=args.atomname,
                   jsonfilenumber=args.number
-                ).praparedeepmd()
+                  ).praparedeepmd()
