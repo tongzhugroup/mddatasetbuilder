@@ -203,8 +203,7 @@ class DatasetBuilder:
                 # atom ID starts from 1
                 distances = step_atoms.get_distances(
                     atoma-1, range(len(step_atoms)), mic=True)
-                cutoffatomid = np.where(distances < self.cutoff)
-                cutoffatoms = step_atoms[cutoffatomid]
+                cutoffatoms = step_atoms[distances < self.cutoff]
                 symbols = cutoffatoms.get_chemical_symbols()
                 results.append(
                     (np.array([step, atoma]),
