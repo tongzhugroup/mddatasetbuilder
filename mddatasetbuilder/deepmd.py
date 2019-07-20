@@ -10,6 +10,7 @@ from multiprocessing import Pool
 
 from tqdm import tqdm
 import dpdata
+import numpy as np
 
 from gaussianrunner import GaussianAnalyst
 
@@ -55,7 +56,11 @@ class PrepareDeePMD:
         self.atomname = multi_systems.atom_names
 
     def _preparedeepmdforLOG(self, logfilename):
-        return dpdata.LabeledSystem(logfilename, fmt=self.fmt)
+        system = dpdata.LabeledSystem(logfilename, fmt=self.fmt)
+        atom_pref_file = os.path.splitext(logfilename) + ".atom_pref.npy"
+        if os.path.exists(atom_pref_file):
+            system.data["atom_pref"] = np.load(atom_pref_file)
+        return system
 
     def _writejson(self, jsonfilename):
         jsonpath = os.path.dirname(jsonfilename)
