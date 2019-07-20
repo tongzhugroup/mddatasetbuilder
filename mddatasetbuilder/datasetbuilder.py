@@ -346,7 +346,9 @@ class DatasetBuilder:
                         takenatomidindex.append(
                             range(idsum, idsum+len(mol_atomid)))
                         idsum += len(mol_atomid)
-                cutoffatoms = step_atoms[np.concatenate(takenatomids)]
+                idx = np.concatenate(takenatomids)
+                cutoffatoms = step_atoms[idx]
+                cutoffatoms[idx == atoma-1].tag = 1
                 cutoffatoms.wrap(
                     center=step_atoms[atoma-1].position /
                     cutoffatoms.get_cell_lengths_and_angles()[0: 3],
@@ -362,6 +364,10 @@ class DatasetBuilder:
                             self.gjfdir, folder,
                             f'{self.xyzfilename}_{trajatomfilename}_{atomtypenum}.gjf'),
                         takenatomidindex, cutoffatoms)
+                    np.save(os.path.join(
+                        self.gjfdir, folder,
+                        f'{self.xyzfilename}_{trajatomfilename}_{atomtypenum}.atom_pref.npy'),
+                        np.array([cutoffatoms.get_tags()]))
                 results += 1
         return results
 
