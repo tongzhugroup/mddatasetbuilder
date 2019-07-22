@@ -32,7 +32,7 @@ class PrepareDeePMD:
         self.jsonfilenames = [os.path.join(
             f"train{i}", f"train{i}.json") for i in range(jsonfilenumber)]
 
-    def praparedeepmd(self):
+    def preparedeepmd(self):
         """Prepare the dataset."""
         self._searchpath()
         for jsonfilename in self.jsonfilenames:
@@ -57,7 +57,7 @@ class PrepareDeePMD:
 
     def _preparedeepmdforLOG(self, logfilename):
         system = dpdata.LabeledSystem(logfilename, fmt=self.fmt)
-        atom_pref_file = os.path.splitext(logfilename) + ".atom_pref.npy"
+        atom_pref_file = os.path.splitext(logfilename)[0] + ".atom_pref.npy"
         if os.path.exists(atom_pref_file):
             system.data["atom_pref"] = np.load(atom_pref_file)
         return system
@@ -136,4 +136,4 @@ def _commandline():
     args = parser.parse_args()
     PrepareDeePMD(data_path=args.path, deepmd_dir=args.dir,
                   jsonfilenumber=args.number
-                  ).praparedeepmd()
+                  ).preparedeepmd()
