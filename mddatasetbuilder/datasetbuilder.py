@@ -348,7 +348,7 @@ class DatasetBuilder:
                         idsum += len(mol_atomid)
                 idx = np.concatenate(takenatomids)
                 cutoffatoms = step_atoms[idx]
-                cutoffatoms[idx == atoma-1].tag = 1
+                cutoffatoms[np.nonzero(idx == atoma-1)[0][0]].tag = 1
                 cutoffatoms.wrap(
                     center=step_atoms[atoma-1].position /
                     cutoffatoms.get_cell_lengths_and_angles()[0: 3],
