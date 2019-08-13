@@ -1,0 +1,13 @@
+on: push
+name: Test
+jobs:
+  testWithTox:
+    name: Test with tox
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@master
+    - name: Test with tox
+      uses: njzjz/actions/tox-conda@master
+      env:
+        CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+        COVERALLS_REPO_TOKEN: ${{ secrets.COVERALLS_REPO_TOKEN }}
