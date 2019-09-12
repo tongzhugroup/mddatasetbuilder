@@ -16,7 +16,12 @@ from .dps import dps as connectmolecule
 
 
 class Detect(metaclass=ABCMeta):
-    def __init__(self, filename, atomname, pbc, errorlimit=None, errorfilename=None):
+    def __init__(self,
+                 filename,
+                 atomname,
+                 pbc,
+                 errorlimit=None,
+                 errorfilename=None):
         self.filename = filename
         self.atomname = atomname
         self.pbc = pbc
@@ -56,9 +61,8 @@ class DetectBond(Detect):
     def _readN(self):
         """Read bondfile N, which should be at very beginning."""
         # copy from reacnetgenerator on 2018-12-15
-        with open(
-            self.filename if isinstance(self.filename, str) else self.filename[0]
-        ) as f:
+        with open(self.filename if isinstance(self.filename, str) else self.
+                  filename[0]) as f:
             iscompleted = False
             for index, line in enumerate(f):
                 if line.startswith("#"):
@@ -91,12 +95,10 @@ class DetectBond(Detect):
                     atombond = sorted(
                         map(
                             lambda x: max(1, round(float(x))),
-                            s[4 + int(s[2]) : 4 + 2 * int(s[2])],
-                        )
-                    )
-                    d[pickle.dumps((self.atomnames[int(s[0]) - 1], atombond))].append(
-                        int(s[0])
-                    )
+                            s[4 + int(s[2]):4 + 2 * int(s[2])],
+                        ))
+                    d[pickle.dumps((self.atomnames[int(s[0]) - 1],
+                                    atombond))].append(int(s[0]))
         return d, step
 
     def readmolecule(self, lines):
@@ -106,9 +108,8 @@ class DetectBond(Detect):
             if line:
                 if not line.startswith("#"):
                     s = line.split()
-                    bond[int(s[0]) - 1] = map(
-                        lambda x: int(x) - 1, s[3 : 3 + int(s[2])]
-                    )
+                    bond[int(s[0]) - 1] = map(lambda x: int(x) - 1,
+                                              s[3:3 + int(s[2])])
         molecules = connectmolecule(bond)
         return molecules
 
@@ -117,9 +118,8 @@ class DetectDump(Detect):
     def _readN(self):
         # copy from reacnetgenerator on 2018-12-15
         iscompleted = False
-        with open(
-            self.filename if isinstance(self.filename, str) else self.filename[0]
-        ) as f:
+        with open(self.filename if isinstance(self.filename, str) else self.
+                  filename[0]) as f:
             for index, line in enumerate(f):
                 if line.startswith("ITEM:"):
                     linecontent = self.LineType.linecontent(line)
@@ -181,19 +181,13 @@ class DetectDump(Detect):
             ghost_atoms = repeated_atoms[nearest]
             realnumber = np.where(nearest)[0] % atomnumber
             step_atoms += ghost_atoms
-        xyzstring = "".join(
-            (
-                f"{atomnumber}\n{__name__}\n",
-                "\n".join(
-                    [
-                        f"{s:2s} {x:22.15f} {y:22.15f} {z:22.15f}"
-                        for s, (x, y, z) in zip(
-                            step_atoms.get_chemical_symbols(), step_atoms.positions
-                        )
-                    ]
-                ),
-            )
-        )
+        xyzstring = "".join((
+            f"{atomnumber}\n{__name__}\n",
+            "\n".join([
+                f"{s:2s} {x:22.15f} {y:22.15f} {z:22.15f}" for s, (x, y, z) in
+                zip(step_atoms.get_chemical_symbols(), step_atoms.positions)
+            ]),
+        ))
         conv = openbabel.OBConversion()
         conv.SetInAndOutFormats("xyz", "mol2")
         mol = openbabel.OBMol()
@@ -220,11 +214,8 @@ class DetectDump(Detect):
                         elif s2 >= atomnumber:
                             s2 = realnumber[s2 - atomnumber]
                         if readlevel:
-                            level = (
-                                9
-                                if s[3] == "ar"
-                                else (1 if s[3] == "am" else int(s[3]))
-                            )
+                            level = (9 if s[3] == "ar" else
+                                     (1 if s[3] == "am" else int(s[3])))
                             bondlevel[s1].append(level)
                             bondlevel[s2].append(level)
                         else:
@@ -247,10 +238,8 @@ class DetectDump(Detect):
                         s = line.split()
                         ids.append(int(s[0]))
                         step_atoms.append(
-                            Atom(
-                                self.atomname[int(s[1]) - 1], tuple(map(float, s[2:5]))
-                            )
-                        )
+                            Atom(self.atomname[int(s[1]) - 1],
+                                 tuple(map(float, s[2:5]))))
                     elif linecontent == self.LineType.BOX:
                         s = line.split()
                         boxsize.append(float(s[1]) - float(s[0]))
