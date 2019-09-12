@@ -198,7 +198,8 @@ class DetectDump(Detect):
                         elif s2 >= atomnumber:
                             s2 = realnumber[s2-atomnumber]
                         if readlevel:
-                            level = 9 if s[3] == 'ar' else (1 if s[3] == 'am' else int(s[3]))
+                            level = 9 if s[3] == 'ar' else (
+                                1 if s[3] == 'am' else int(s[3]))
                             bondlevel[s1].append(level)
                             bondlevel[s2].append(level)
                         else:
