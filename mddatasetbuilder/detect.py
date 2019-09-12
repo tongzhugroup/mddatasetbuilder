@@ -1,13 +1,17 @@
 """Detect from trajectory."""
 import pickle
-from abc import ABCMeta, abstractmethod
-from enum import Enum, auto
+from abc import ABCMeta
+from abc import abstractmethod
 from collections import defaultdict
+from enum import auto
+from enum import Enum
 
-import openbabel
 import numpy as np
-from ase import Atom, Atoms
+import openbabel
+from ase import Atom
+from ase import Atoms
 from scipy.spatial import cKDTree
+
 from .dps import dps as connectmolecule
 
 
