@@ -10,7 +10,7 @@ if __name__ == '__main__':
     with open(path.join(this_directory, 'docs', 'README.md'), encoding='utf-8') as f:
         long_description = f.read()
 
-    tests_require = ['requests', 'pytest-sugar', 'pytest-cov'],
+    tests_require = ['requests', 'pytest-sugar', 'pytest-cov', 'cython'],
     setup(name='mddatasetbuilder',
           description='A script to make molecular dynamics (MD) datasets for neural networks from given LAMMPS trajectories automatically.',
           keywords="molecular dynamics dataset",
