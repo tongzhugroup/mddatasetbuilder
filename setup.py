@@ -1,9 +1,9 @@
 """Use 'pip install .' to install mddatasetbuilder."""
-
-
 from os import path
 
-from setuptools import find_packages, setup, Extension
+from setuptools import Extension
+from setuptools import find_packages
+from setuptools import setup
 
 if __name__ == "__main__":
     this_directory = path.abspath(path.dirname(__file__))
