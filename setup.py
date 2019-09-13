@@ -14,8 +14,7 @@ if __name__ == "__main__":
     tests_require = (["requests", "pytest-sugar", "pytest-cov", "cython"], )
     setup(
         name="mddatasetbuilder",
-        description=
-        "A script to make molecular dynamics (MD) datasets for neural networks from given LAMMPS trajectories automatically.",
+        description="A script to make molecular dynamics (MD) datasets for neural networks from given LAMMPS trajectories automatically.",
         keywords="molecular dynamics dataset",
         url="https://github.com/njzjz/mddatasetbuilder",
         author="Jinzhe Zeng",
