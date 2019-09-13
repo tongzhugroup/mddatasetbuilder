@@ -7,13 +7,15 @@ from setuptools import setup
 
 if __name__ == "__main__":
     this_directory = path.abspath(path.dirname(__file__))
-    with open(path.join(this_directory, "docs", "README.md"), encoding="utf-8") as f:
+    with open(path.join(this_directory, "docs", "README.md"),
+              encoding="utf-8") as f:
         long_description = f.read()
 
-    tests_require = (["requests", "pytest-sugar", "pytest-cov", "cython"],)
+    tests_require = (["requests", "pytest-sugar", "pytest-cov", "cython"], )
     setup(
         name="mddatasetbuilder",
-        description="A script to make molecular dynamics (MD) datasets for neural networks from given LAMMPS trajectories automatically.",
+        description=
+        "A script to make molecular dynamics (MD) datasets for neural networks from given LAMMPS trajectories automatically.",
         keywords="molecular dynamics dataset",
         url="https://github.com/njzjz/mddatasetbuilder",
         author="Jinzhe Zeng",
@@ -65,7 +67,9 @@ if __name__ == "__main__":
         ext_modules=[
             Extension(
                 "mddatasetbuilder.dps",
-                sources=["mddatasetbuilder/dps.pyx", "mddatasetbuilder/c_stack.cpp"],
+                sources=[
+                    "mddatasetbuilder/dps.pyx", "mddatasetbuilder/c_stack.cpp"
+                ],
                 language="c++",
             )
         ],
