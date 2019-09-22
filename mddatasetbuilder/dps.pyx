@@ -1,5 +1,6 @@
 # distutils: language = c++
 # cython: language_level=3
+# cython: linetrace=True
 """Connect molecule with Depth-First Search."""
 from libc.stdlib cimport malloc, free
 
@@ -22,17 +23,18 @@ def dps(bonds):
         if visited[i]==0:
             mol = []
             st.push(i)
-            visited[i] = 1
             while True:
                 s = st.pop()
                 if s < 0:
                     break
+                elif visited[s]==1:
+                    continue
                 mol.append(s)
                 for b in bonds[s]:
                     b_c = b
                     if visited[b_c]==0:
                         st.push(b_c)
-                        visited[b_c]=1
+                visited[s]=1
             molecule.append(mol)
     free(visited)
     return molecule
