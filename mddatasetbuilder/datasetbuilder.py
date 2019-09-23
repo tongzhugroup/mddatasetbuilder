@@ -283,6 +283,7 @@ class DatasetBuilder:
             pool.close()
             pool.join()
 
+    @staticmethod
     def detect_multiplicity(symbols):
         # currently only support charge=0
         # oxygen -> 3
