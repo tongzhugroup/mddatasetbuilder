@@ -6,9 +6,15 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@master
-    - name: mariamrf/py-package-publish-action@master
-      uses: mariamrf/py-package-publish-action@master
-      env:
-        PYTHON_VERSION: 3.7.3
-        TWINE_PASSWORD: ${{ secrets.TWINE_PASSWORD }}
-        TWINE_USERNAME: ${{ secrets.TWINE_USERNAME }}
+    - name: Setup python
+      uses: actions/setup-python@v1
+      with:
+        python-version: 3.7
+        architecture: x64
+    - run: pip install wheel
+    - run: python setup.py sdist bdist_wheel
+    - name: Publish a Python distribution to PyPI
+      uses: pypa/gh-action-pypi-publish@master
+      with:
+        user: njzjz
+        password: ${{ secrets.pypi_password }}
