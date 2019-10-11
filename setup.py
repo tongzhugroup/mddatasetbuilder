@@ -19,8 +19,7 @@ if __name__ == "__main__":
             (("CYTHON_TRACE", "1"), ("CYTHON_TRACE_NOGIL", "1")))
     setup(
         name="mddatasetbuilder",
-        description=
-        "A script to make molecular dynamics (MD) datasets for neural networks from given LAMMPS trajectories automatically.",
+        description="A script to make molecular dynamics (MD) datasets for neural networks from given LAMMPS trajectories automatically.",
         keywords="molecular dynamics dataset",
         url="https://github.com/njzjz/mddatasetbuilder",
         author="Jinzhe Zeng",
