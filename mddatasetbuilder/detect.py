@@ -40,9 +40,9 @@ class Detect(metaclass=ABCMeta):
     @staticmethod
     def gettype(inputtype):
         """Get the class for the input file type."""
-        if inputtype == 'bond':
+        if inputtype == "bond":
             detectclass = DetectBond
-        elif inputtype == 'dump':
+        elif inputtype == "dump":
             detectclass = DetectDump
         else:
             raise RuntimeError("Wrong input file type")
@@ -55,7 +55,9 @@ class DetectBond(Detect):
     def _readN(self):
         """Read bondfile N, which should be at very beginning."""
         # copy from reacnetgenerator on 2018-12-15
-        with open(self.filename if isinstance(self.filename, str) else self.filename[0]) as f:
+        with open(
+            self.filename if isinstance(self.filename, str) else self.filename[0]
+        ) as f:
             iscompleted = False
             for index, line in enumerate(f):
                 if line.startswith("#"):
@@ -70,11 +72,11 @@ class DetectBond(Detect):
                         atomtype = np.zeros(N, dtype=np.int)
                 else:
                     s = line.split()
-                    atomtype[int(s[0])-1] = int(s[1])
-        steplinenum = stepbindex-stepaindex
+                    atomtype[int(s[0]) - 1] = int(s[1])
+        steplinenum = stepbindex - stepaindex
         self._N = N
         self.atomtype = atomtype
-        self.atomnames = self.atomname[self.atomtype-1]
+        self.atomnames = self.atomname[self.atomtype - 1]
         return steplinenum
 
     def readatombondtype(self, item):
@@ -86,20 +88,26 @@ class DetectBond(Detect):
                 if line[0] != "#":
                     s = line.split()
                     atombond = sorted(
-                        map(lambda x: max(1, round(float(x))), s[4 + int(s[2]): 4 + 2 * int(s[2])]))
-                    d[pickle.dumps((self.atomnames[int(s[0]) - 1],
-                                    atombond))].append(int(s[0]))
+                        map(
+                            lambda x: max(1, round(float(x))),
+                            s[4 + int(s[2]) : 4 + 2 * int(s[2])],
+                        )
+                    )
+                    d[pickle.dumps((self.atomnames[int(s[0]) - 1], atombond))].append(
+                        int(s[0])
+                    )
         return d, step
 
     def readmolecule(self, lines):
         # copy from reacnetgenerator on 2018-12-15
-        bond = [None]*self._N
+        bond = [None] * self._N
         for line in lines:
             if line:
                 if not line.startswith("#"):
                     s = line.split()
-                    bond[int(s[0])-1] = map(lambda x: int(x) -
-                                            1, s[3:3+int(s[2])])
+                    bond[int(s[0]) - 1] = map(
+                        lambda x: int(x) - 1, s[3 : 3 + int(s[2])]
+                    )
         molecules = connectmolecule(bond)
         return molecules
 
@@ -108,17 +116,19 @@ class DetectDump(Detect):
     def _readN(self):
         # copy from reacnetgenerator on 2018-12-15
         iscompleted = False
-        with open(self.filename if isinstance(self.filename, str) else self.filename[0]) as f:
+        with open(
+            self.filename if isinstance(self.filename, str) else self.filename[0]
+        ) as f:
             for index, line in enumerate(f):
                 if line.startswith("ITEM:"):
                     linecontent = self.LineType.linecontent(line)
                     if linecontent == self.LineType.ATOMS:
                         keys = line.split()
-                        self.id_idx = keys.index('id') - 2
-                        self.tidx = keys.index('type') - 2
-                        self.xidx = keys.index('x') - 2
-                        self.yidx = keys.index('y') - 2
-                        self.zidx = keys.index('z') - 2
+                        self.id_idx = keys.index("id") - 2
+                        self.tidx = keys.index("type") - 2
+                        self.xidx = keys.index("x") - 2
+                        self.yidx = keys.index("y") - 2
+                        self.zidx = keys.index("z") - 2
                 else:
                     if linecontent == self.LineType.NUMBER:
                         if iscompleted:
@@ -131,11 +141,11 @@ class DetectDump(Detect):
                         atomtype = np.zeros(N, dtype=int)
                     elif linecontent == self.LineType.ATOMS:
                         s = line.split()
-                        atomtype[int(s[0])-1] = int(s[1])
-        steplinenum = stepbindex-stepaindex
+                        atomtype[int(s[0]) - 1] = int(s[1])
+        steplinenum = stepbindex - stepaindex
         self._N = N
         self.atomtype = atomtype
-        self.atomnames = self.atomname[self.atomtype-1]
+        self.atomnames = self.atomname[self.atomtype - 1]
         return steplinenum
 
     def readatombondtype(self, item):
@@ -143,7 +153,7 @@ class DetectDump(Detect):
         if needlerror:
             trajline, errorline = lines
             item = (step, trajline), None
-            lerror = np.fromstring(errorline, dtype=float, sep=' ')[7:]
+            lerror = np.fromstring(errorline, dtype=float, sep=" ")[7:]
         d = defaultdict(list)
         step_atoms, ids = self.readcrd(lines)
         if needlerror:
@@ -152,11 +162,11 @@ class DetectDump(Detect):
         for i, (n, l) in enumerate(zip(self.atomnames, level)):
             if not needlerror or lerror[i] > self.errorlimit:
                 # Note that atom id starts from 1
-                d[pickle.dumps((n, sorted(l)))].append(i+1)
+                d[pickle.dumps((n, sorted(l)))].append(i + 1)
         return d, step
 
     def readmolecule(self, lines):
-        bond = [None]*self._N
+        bond = [None] * self._N
         step_atoms, _ = self.readcrd(lines)
         bond = self._crd2bond(step_atoms, readlevel=False)
         molecules = connectmolecule(bond)
@@ -178,15 +188,25 @@ class DetectDump(Detect):
             ghost_atoms = repeated_atoms[nearest]
             realnumber = np.where(nearest)[0] % atomnumber
             step_atoms += ghost_atoms
-        xyzstring = ''.join((f"{atomnumber}\n{__name__}\n", "\n".join(
-            [f'{s:2s} {x:22.15f} {y:22.15f} {z:22.15f}'
-             for s, (x, y, z) in zip(
-                 step_atoms.get_chemical_symbols(),
-                 step_atoms.positions)])))
+        xyzstring = "".join(
+            (
+                f"{atomnumber}\n{__name__}\n",
+                "\n".join(
+                    [
+                        f"{s:2s} {x:22.15f} {y:22.15f} {z:22.15f}"
+                        for s, (x, y, z) in zip(
+                            step_atoms.get_chemical_symbols(), step_atoms.positions
+                        )
+                    ]
+                ),
+            )
+        )
         # Use openbabel to connect atoms
         mol = openbabel.OBMol()
         mol.BeginModify()
-        for idx, (num, position) in enumerate(zip(step_atoms.get_atomic_numbers(), step_atoms.positions)):
+        for idx, (num, position) in enumerate(
+            zip(step_atoms.get_atomic_numbers(), step_atoms.positions)
+        ):
             a = mol.NewAtom(idx)
             a.SetAtomicNum(int(num))
             a.SetVector(*position)
@@ -204,9 +224,9 @@ class DetectDump(Detect):
                 # duplicated
                 continue
             elif s1 >= atomnumber:
-                s1 = realnumber[s1-atomnumber]
+                s1 = realnumber[s1 - atomnumber]
             elif s2 >= atomnumber:
-                s2 = realnumber[s2-atomnumber]
+                s2 = realnumber[s2 - atomnumber]
             if not readlevel:
                 bond[s1].append(s2)
                 bond[s2].append(s1)
@@ -230,12 +250,19 @@ class DetectDump(Detect):
                     if linecontent == self.LineType.ATOMS:
                         s = line.split()
                         ids.append(int(s[self.id_idx]))
-                        step_atoms.append(Atom(
-                            self.atomname[int(s[self.tidx]) - 1],
-                            (float(s[self.xidx]), float(s[self.yidx]), float(s[self.zidx]))))
+                        step_atoms.append(
+                            Atom(
+                                self.atomname[int(s[self.tidx]) - 1],
+                                (
+                                    float(s[self.xidx]),
+                                    float(s[self.yidx]),
+                                    float(s[self.zidx]),
+                                ),
+                            )
+                        )
                     elif linecontent == self.LineType.BOX:
                         s = line.split()
-                        boxsize.append(float(s[1])-float(s[0]))
+                        boxsize.append(float(s[1]) - float(s[0]))
         # sort by ID
         step_atoms = [x for (y, x) in sorted(zip(ids, step_atoms))]
         step_atoms = Atoms(step_atoms, cell=boxsize, pbc=self.pbc)

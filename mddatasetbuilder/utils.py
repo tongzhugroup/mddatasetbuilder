@@ -8,7 +8,22 @@ import lz4.frame
 import pybase64
 
 
-def multiopen(pool, func, l, semaphore=None, nlines=None, unordered=True, return_num=False, start=0, extra=None, interval=None, bar=True, desc=None, unit="it", total=None):
+def multiopen(
+    pool,
+    func,
+    l,
+    semaphore=None,
+    nlines=None,
+    unordered=True,
+    return_num=False,
+    start=0,
+    extra=None,
+    interval=None,
+    bar=True,
+    desc=None,
+    unit="it",
+    total=None,
+):
     obj = l
     if nlines:
         obj = itertools.zip_longest(*[obj] * nlines)
@@ -42,8 +57,10 @@ def compress(x, isbytes=False):
     This function reduces IO overhead to speed up the program.
     """
     if isbytes:
-        return pybase64.b64encode(lz4.frame.compress(x, compression_level=0))+b'\n'
-    return pybase64.b64encode(lz4.frame.compress(x.encode(), compression_level=-1))+b'\n'
+        return pybase64.b64encode(lz4.frame.compress(x, compression_level=0)) + b"\n"
+    return (
+        pybase64.b64encode(lz4.frame.compress(x.encode(), compression_level=-1)) + b"\n"
+    )
 
 
 def decompress(x, isbytes=False):
@@ -63,7 +80,7 @@ def bytestolist(x):
 
 def run_mp(nproc, **arg):
     pool = Pool(nproc, maxtasksperchild=1000)
-    semaphore = Semaphore(nproc*150)
+    semaphore = Semaphore(nproc * 150)
     try:
         results = multiopen(pool=pool, semaphore=semaphore, **arg)
         for item in results:
