@@ -16,7 +16,6 @@ import os
 import tempfile
 import time
 import pickle
-import fileinput
 from collections import Counter, defaultdict
 from multiprocessing import cpu_count
 
@@ -160,8 +159,8 @@ class DatasetBuilder:
                         lambda x:vector_elements[x[0]][: x[1]], symbols_counter.items()), [])]=vector
                     max_counter |= symbols_counter
                     j += 1
-                logging.info(
-                    f"Max counter of {trajatomfilename} is {max_counter}")
+            logging.info(
+                f"Max counter of {trajatomfilename} is {max_counter}")
             choosedindexs = self._clusterdatas(
                 np.sort(feedvector), n_clusters=self.n_clusters,
                 n_each=self.n_each)
@@ -365,18 +364,20 @@ class DatasetBuilder:
 
     def lineiter(self, detector):
         fns = must_be_list(detector.filename)
-        with fileinput.input(fns) as f:
-            it = itertools.islice(itertools.zip_longest(
-                *[f] * detector.steplinenum), 0, None, self.stepinterval)
-            for line in it:
-                yield line
+        for fn in fns:
+            with open(fn) as f:
+                it = itertools.islice(itertools.zip_longest(
+                    *[f] * detector.steplinenum), 0, None, self.stepinterval)
+                for line in it:
+                    yield line
 
     def erroriter(self):
         fns = must_be_list(self.errorfilename)
-        with fileinput.input(fns) as f:
-            it = itertools.islice(f, 1, None)
-            for line in it:
-                yield line
+        for fn in fns:
+            with open(fn) as f:
+                it = itertools.islice(f, 1, None)
+                for line in it:
+                    yield line
 
 
 def _commandline():
