@@ -11,7 +11,7 @@ if __name__ == '__main__':
     with open(path.join(this_directory, 'docs', 'README.md'), encoding='utf-8') as f:
         long_description = f.read()
 
-    tests_require = ['requests', 'pytest-sugar', 'pytest-cov'],
+    tests_require = ['requests', 'pytest-sugar', 'pytest-cov', 'cython'],
     define_macros = []
     if os.environ.get("DEBUG", 0):
         define_macros.extend((('CYTHON_TRACE', '1'), ('CYTHON_TRACE_NOGIL', '1')))
