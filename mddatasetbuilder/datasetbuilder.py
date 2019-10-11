@@ -173,10 +173,10 @@ class DatasetBuilder:
         self._nstructure += len(choosedindexs)
 
     def _writestepmatrix(self, item):
-        step, _ = item
+        step, lines = item
         results = []
         if step in self.dstep:
-            step_atoms, _ = self.crddetector.readcrd(item)
+            step_atoms, _ = self.crddetector.readcrd(lines)
             for atoma in self.dstep[step]:
                 # atom ID starts from 1
                 distances = step_atoms.get_distances(
@@ -307,8 +307,7 @@ class DatasetBuilder:
         results = 0
         if step in self.dstep:
             if len(lines) == 2:
-                step_atoms, _ = self.crddetector.readcrd(
-                    ((step, lines[0]), None))
+                step_atoms, _ = self.crddetector.readcrd(lines[0])
                 molecules = self.bonddetector.readmolecule(lines[1])
             else:
                 molecules, step_atoms = self.bonddetector.readmolecule(lines)

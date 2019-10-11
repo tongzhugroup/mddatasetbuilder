@@ -145,7 +145,7 @@ class DetectDump(Detect):
             item = (step, trajline), None
             lerror = np.fromstring(errorline, dtype=float, sep=' ')[7:]
         d = defaultdict(list)
-        step_atoms, ids = self.readcrd(item)
+        step_atoms, ids = self.readcrd(lines)
         if needlerror:
             lerror = [x for (y, x) in sorted(zip(ids, lerror))]
         level = self._crd2bond(step_atoms, readlevel=True)
@@ -157,7 +157,7 @@ class DetectDump(Detect):
 
     def readmolecule(self, lines):
         bond = [None]*self._N
-        step_atoms, _ = self.readcrd(((None, lines), None))
+        step_atoms, _ = self.readcrd(lines)
         bond = self._crd2bond(step_atoms, readlevel=False)
         molecules = connectmolecule(bond)
         # return atoms as well
@@ -218,7 +218,7 @@ class DetectDump(Detect):
 
     def readcrd(self, item):
         """Only this function can read coordinates."""
-        (_, lines), _ = item
+        lines = item
         boxsize = []
         step_atoms = []
         ids = []
