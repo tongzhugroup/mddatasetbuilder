@@ -1,8 +1,10 @@
 """Detect from trajectory."""
 import pickle
-from abc import ABCMeta, abstractmethod
-from enum import Enum, auto
+from abc import ABCMeta
+from abc import abstractmethod
 from collections import defaultdict
+from enum import auto
+from enum import Enum
 
 try:
     from openbabel import openbabel
