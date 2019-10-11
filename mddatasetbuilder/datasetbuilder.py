@@ -140,9 +140,9 @@ class DatasetBuilder:
             feedvector = np.zeros((n_atoms, 0))
             vector_elements = defaultdict(list)
             results = run_mp(self.nproc, func=self._writestepmatrix,
-                    l=self.lineiter(self.crddetector),
-                    return_num=True, total=self._nstep,
-                    desc=trajatomfilename, unit="timestep")
+                             l=self.lineiter(self.crddetector),
+                             return_num=True, total=self._nstep,
+                             desc=trajatomfilename, unit="timestep")
             j = 0
             for result in results:
                 for stepatoma, vector, symbols_counter in result:
@@ -155,7 +155,7 @@ class DatasetBuilder:
                             feedvector, ((0, 0), (0, 1)),
                             'constant',
                             constant_values=(0, self._coulumbdiag
-                                                [element]))
+                                             [element]))
                     feedvector[j, sum(map(
                         lambda x:vector_elements[x[0]][: x[1]], symbols_counter.items()), [])]=vector
                     max_counter |= symbols_counter
@@ -253,9 +253,9 @@ class DatasetBuilder:
                 bonditer = self.lineiter(self.bonddetector)
                 lineiter = zip(crditer, bonditer)
             results = run_mp(self.nproc, func=self._writestepxyzfile,
-                            l=lineiter, return_num=True,
-                            total=self._nstructure,
-                            desc="Write structures", unit="structure")
+                             l=lineiter, return_num=True,
+                             total=self._nstructure,
+                             desc="Write structures", unit="structure")
             for _ in results:
                 pass
 
@@ -363,7 +363,7 @@ class DatasetBuilder:
         typestr = f"{typetuple[0]}{''.join(map(str,typetuple[1]))}"
         self.bondtyperestore[typebytes] = typestr
         return typestr
- 
+
     def lineiter(self, detector):
         fns = must_be_list(detector.filename)
         with fileinput.input(fns) as f:

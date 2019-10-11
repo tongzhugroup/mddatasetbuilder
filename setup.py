@@ -14,7 +14,8 @@ if __name__ == '__main__':
     tests_require = ['requests', 'pytest-sugar', 'pytest-cov'],
     define_macros = []
     if os.environ.get("DEBUG", 0):
-        define_macros.extend((('CYTHON_TRACE', '1'), ('CYTHON_TRACE_NOGIL', '1')))
+        define_macros.extend(
+            (('CYTHON_TRACE', '1'), ('CYTHON_TRACE_NOGIL', '1')))
     setup(name='mddatasetbuilder',
           description='A script to make molecular dynamics (MD) datasets for neural networks from given LAMMPS trajectories automatically.',
           keywords="molecular dynamics dataset",
@@ -67,6 +68,6 @@ if __name__ == '__main__':
               Extension("mddatasetbuilder.dps", sources=[
                         "mddatasetbuilder/dps.pyx", "mddatasetbuilder/c_stack.cpp"], language="c++",
                         define_macros=define_macros,
-              ),
+                        ),
           ],
           )
