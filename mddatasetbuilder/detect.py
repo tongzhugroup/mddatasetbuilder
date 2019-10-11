@@ -4,7 +4,10 @@ from abc import ABCMeta, abstractmethod
 from enum import Enum, auto
 from collections import defaultdict
 
-import openbabel
+try:
+    from openbabel import openbabel
+except ImportError:
+    import openbabel
 import numpy as np
 from ase import Atom, Atoms
 from scipy.spatial import cKDTree
@@ -109,6 +112,13 @@ class DetectDump(Detect):
             for index, line in enumerate(f):
                 if line.startswith("ITEM:"):
                     linecontent = self.LineType.linecontent(line)
+                    if linecontent == self.LineType.ATOMS:
+                        keys = line.split()
+                        self.id_idx = keys.index('id') - 2
+                        self.tidx = keys.index('type') - 2
+                        self.xidx = keys.index('x') - 2
+                        self.yidx = keys.index('y') - 2
+                        self.zidx = keys.index('z') - 2
                 else:
                     if linecontent == self.LineType.NUMBER:
                         if iscompleted:
@@ -156,6 +166,7 @@ class DetectDump(Detect):
     @classmethod
     def _crd2bond(cls, step_atoms, readlevel):
         # copy from reacnetgenerator on 2019/4/13
+        # updated on 2019/10/11
         atomnumber = len(step_atoms)
         if step_atoms.pbc.any():
             # Apply period boundry conditions
@@ -172,39 +183,37 @@ class DetectDump(Detect):
              for s, (x, y, z) in zip(
                  step_atoms.get_chemical_symbols(),
                  step_atoms.positions)])))
-        conv = openbabel.OBConversion()
-        conv.SetInAndOutFormats('xyz', 'mol2')
+        # Use openbabel to connect atoms
         mol = openbabel.OBMol()
-        conv.ReadString(mol, xyzstring)
-        mol2string = conv.WriteString(mol)
-        linecontent = -1
-        if readlevel:
-            bondlevel = [[] for i in range(atomnumber)]
-        else:
+        mol.BeginModify()
+        for idx, (num, position) in enumerate(zip(step_atoms.get_atomic_numbers(), step_atoms.positions)):
+            a = mol.NewAtom(idx)
+            a.SetAtomicNum(int(num))
+            a.SetVector(*position)
+        mol.ConnectTheDots()
+        if not readlevel:
             bond = [[] for i in range(atomnumber)]
-        for line in mol2string.split('\n'):
-            if line.startswith("@<TRIPOS>BOND"):
-                linecontent = 0
+        else:
+            mol.PerceiveBondOrders()
+            bondlevel = [[] for i in range(atomnumber)]
+        mol.EndModify()
+        for b in openbabel.OBMolBondIter(mol):
+            s1 = b.GetBeginAtom().GetId()
+            s2 = b.GetEndAtom().GetId()
+            if s1 >= atomnumber and s2 >= atomnumber:
+                # duplicated
+                continue
+            elif s1 >= atomnumber:
+                s1 = realnumber[s1-atomnumber]
+            elif s2 >= atomnumber:
+                s2 = realnumber[s2-atomnumber]
+            if not readlevel:
+                bond[s1].append(s2)
+                bond[s2].append(s1)
             else:
-                if linecontent == 0:
-                    s = line.split()
-                    if len(s) > 3:
-                        s1, s2 = int(s[1])-1, int(s[2])-1
-                        if s1 >= atomnumber and s2 >= atomnumber:
-                            # duplicated
-                            continue
-                        elif s1 >= atomnumber:
-                            s1 = realnumber[s1-atomnumber]
-                        elif s2 >= atomnumber:
-                            s2 = realnumber[s2-atomnumber]
-                        if readlevel:
-                            level = 9 if s[3] == 'ar' else (
-                                1 if s[3] == 'am' else int(s[3]))
-                            bondlevel[s1].append(level)
-                            bondlevel[s2].append(level)
-                        else:
-                            bond[s1].append(s2)
-                            bond[s2].append(s1)
+                level = b.GetBondOrder()
+                bondlevel[s1].append(level)
+                bondlevel[s2].append(level)
         return bondlevel if readlevel else bond
 
     def readcrd(self, item):
@@ -220,10 +229,10 @@ class DetectDump(Detect):
                 else:
                     if linecontent == self.LineType.ATOMS:
                         s = line.split()
-                        ids.append(int(s[0]))
+                        ids.append(int(s[self.id_idx]))
                         step_atoms.append(Atom(
-                            self.atomname[int(s[1]) - 1],
-                            tuple(map(float, s[2: 5]))))
+                            self.atomname[int(s[self.tidx]) - 1],
+                                 (float(s[self.xidx]), float(s[self.yidx]), float(s[self.zidx]))))
                     elif linecontent == self.LineType.BOX:
                         s = line.split()
                         boxsize.append(float(s[1])-float(s[0]))
