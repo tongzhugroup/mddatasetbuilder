@@ -232,7 +232,7 @@ class DetectDump(Detect):
                         ids.append(int(s[self.id_idx]))
                         step_atoms.append(Atom(
                             self.atomname[int(s[self.tidx]) - 1],
-                                 (float(s[self.xidx]), float(s[self.yidx]), float(s[self.zidx]))))
+                            (float(s[self.xidx]), float(s[self.yidx]), float(s[self.zidx]))))
                     elif linecontent == self.LineType.BOX:
                         s = line.split()
                         boxsize.append(float(s[1])-float(s[0]))
