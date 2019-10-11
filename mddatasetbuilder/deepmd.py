@@ -1,5 +1,4 @@
 """Gaussian logs to DeePMD data files."""
-
 import argparse
 import json
 import os
@@ -8,9 +7,9 @@ import random
 from collections import Counter
 from multiprocessing import Pool
 
-from tqdm import tqdm
 import dpdata
 import numpy as np
+from tqdm import tqdm
 
 
 class PrepareDeePMD:

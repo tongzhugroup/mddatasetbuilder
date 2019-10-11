@@ -1,11 +1,12 @@
-from multiprocessing import Pool, Semaphore
-import logging
 import itertools
+import logging
 import pickle
+from multiprocessing import Pool
+from multiprocessing import Semaphore
 
-from tqdm import tqdm
 import lz4.frame
 import pybase64
+from tqdm import tqdm
 
 
 def multiopen(
