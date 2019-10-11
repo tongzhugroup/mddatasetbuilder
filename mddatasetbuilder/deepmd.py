@@ -12,8 +12,6 @@ from tqdm import tqdm
 import dpdata
 import numpy as np
 
-from gaussianrunner import GaussianAnalyst
-
 
 class PrepareDeePMD:
     """Prepare DeePMD training files."""

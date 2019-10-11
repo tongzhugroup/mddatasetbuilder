@@ -17,19 +17,17 @@ import tempfile
 import time
 import pickle
 from collections import Counter, defaultdict
-from multiprocessing import Pool, Semaphore, cpu_count
+from multiprocessing import cpu_count
 
 import numpy as np
-import pybase64
-import lz4.frame
 from ase.data import atomic_numbers
 from ase.io import write as write_xyz
 from pkg_resources import DistributionNotFound, get_distribution
 from sklearn import preprocessing
 from sklearn.cluster import MiniBatchKMeans
-from tqdm import tqdm
 
 from .detect import Detect
+from .utils import run_mp, bytestolist, listtobytes, must_be_list
 
 try:
     __version__ = get_distribution(__name__).version
@@ -72,9 +70,7 @@ class DatasetBuilder:
         self.n_each = n_each
         self.writegjf = True
         self.gjfdir = f'{self.dataset_dir}_gjf'
-        self.qmkeywords = qmkeywords
-        if type(self.qmkeywords) == str:
-            self.qmkeywords = [self.qmkeywords]
+        self.qmkeywords = must_be_list(qmkeywords)
         self.fragment = fragment
         self._coulumbdiag = dict(map(lambda symbol: (
             symbol, atomic_numbers[symbol]**2.4/2), atomname))
@@ -105,47 +101,35 @@ class DatasetBuilder:
                 logging.info(
                     f"Step {len(timearray)-1} Done! Time consumed (s): {timearray[-1]-timearray[-2]:.3f}")
 
-    @classmethod
-    def _produce(cls, semaphore, producelist, parameter):
-        for item in producelist:
-            semaphore.acquire()
-            yield item, parameter
-
     def _readtimestepsbond(self):
         # added on 2018-12-15
         stepatomfiles = {}
         self._mkdir(self.trajatom_dir)
-        with Pool(self.nproc, maxtasksperchild=10000) as pool:
-            semaphore = Semaphore(360)
-            results = pool.imap_unordered(
-                self.bonddetector.readatombondtype,
-                self._produce(semaphore, enumerate(zip(self.lineiter(self.bonddetector), self.erroriter(
-                )) if self.errorfilename is not None else self.lineiter(self.bonddetector)), (self.errorfilename is not None)),
-                100)
-            nstep = 0
-            for d, step in tqdm(
-                    results, desc="Read trajectory", unit="timestep"):
-                for bondtypebytes, atomids in d.items():
-                    bondtype = self._bondtype(bondtypebytes)
-                    if bondtype not in self.atombondtype:
-                        self.atombondtype.append(bondtype)
-                        stepatomfiles[bondtype] = open(os.path.join(
-                            self.trajatom_dir, f'stepatom.{bondtype}'), 'wb')
-                    stepatomfiles[bondtype].write(
-                        self.listtobytes([step, atomids]))
-                semaphore.release()
-                nstep += 1
-        pool.close()
+        results = run_mp(self.nproc, func=self.bonddetector.readatombondtype,
+                         l=zip(self.lineiter(self.bonddetector), self.erroriter(
+                         )) if self.errorfilename is not None else self.lineiter(self.bonddetector),
+                         return_num=True, extra=self.errorfilename is not None,
+                         desc="Read trajectory", unit="timestep")
+        nstep = 0
+        for d, step in results:
+            for bondtypebytes, atomids in d.items():
+                bondtype = self._bondtype(bondtypebytes)
+                if bondtype not in self.atombondtype:
+                    self.atombondtype.append(bondtype)
+                    stepatomfiles[bondtype] = open(os.path.join(
+                        self.trajatom_dir, f'stepatom.{bondtype}'), 'wb')
+                stepatomfiles[bondtype].write(
+                    listtobytes([step, atomids]))
+            nstep += 1
         self._nstep = nstep
         for stepatomfile in stepatomfiles.values():
             stepatomfile.close()
-        pool.join()
 
     def _writecoulumbmatrix(self, trajatomfilename, fc):
         self.dstep = {}
         with open(os.path.join(self.trajatom_dir, f"stepatom.{trajatomfilename}"), 'rb') as f:
             for line in f:
-                s = self.bytestolist(line)
+                s = bytestolist(line)
                 self.dstep[s[0]] = s[1]
         n_atoms = sum(map(len, self.dstep.values()))
         if n_atoms > self.n_clusters:
@@ -154,51 +138,44 @@ class DatasetBuilder:
             stepatom = np.zeros((n_atoms, 2), dtype=int)
             feedvector = np.zeros((n_atoms, 0))
             vector_elements = defaultdict(list)
-            with Pool(self.nproc, maxtasksperchild=10000) as pool:
-                semaphore = Semaphore(360)
-                results = pool.imap_unordered(
-                    self._writestepmatrix, self._produce(semaphore,
-                                                         enumerate(self.lineiter(self.crddetector)), None), 100)
-                j = 0
-                for result in tqdm(
-                        results, desc=trajatomfilename, total=self._nstep,
-                        unit="timestep"):
-                    for stepatoma, vector, symbols_counter in result:
-                        stepatom[j] = stepatoma
-                        for element in (
-                                symbols_counter - max_counter).elements():
-                            vector_elements[element].append(
-                                feedvector.shape[1])
-                            feedvector = np.pad(
-                                feedvector, ((0, 0),
-                                             (0, 1)),
-                                'constant',
-                                constant_values=(0, self._coulumbdiag
-                                                 [element]))
-                        feedvector[j, sum(map(
-                            lambda x:vector_elements[x[0]][: x[1]], symbols_counter.items()), [])] = vector
-                        max_counter |= symbols_counter
-                        j += 1
-                    semaphore.release()
-                logging.info(
-                    f"Max counter of {trajatomfilename} is {max_counter}")
-            pool.close()
+            results = run_mp(self.nproc, func=self._writestepmatrix,
+                             l=self.lineiter(self.crddetector),
+                             return_num=True, total=self._nstep,
+                             desc=trajatomfilename, unit="timestep")
+            j = 0
+            for result in results:
+                for stepatoma, vector, symbols_counter in result:
+                    stepatom[j] = stepatoma
+                    for element in (
+                            symbols_counter - max_counter).elements():
+                        vector_elements[element].append(
+                            feedvector.shape[1])
+                        feedvector = np.pad(
+                            feedvector, ((0, 0), (0, 1)),
+                            'constant',
+                            constant_values=(0, self._coulumbdiag
+                                             [element]))
+                    feedvector[j, sum(map(
+                        lambda x:vector_elements[x[0]][: x[1]], symbols_counter.items()), [])]=vector
+                    max_counter |= symbols_counter
+                    j += 1
+            logging.info(
+                f"Max counter of {trajatomfilename} is {max_counter}")
             choosedindexs = self._clusterdatas(
                 np.sort(feedvector), n_clusters=self.n_clusters,
                 n_each=self.n_each)
-            pool.join()
         else:
             stepatom = np.array([[u, vv]
                                  for u, v in self.dstep.items() for vv in v])
             choosedindexs = range(n_atoms)
-        fc.write(self.listtobytes(stepatom[choosedindexs]))
+        fc.write(listtobytes(stepatom[choosedindexs]))
         self._nstructure += len(choosedindexs)
 
     def _writestepmatrix(self, item):
-        (step, _), _ = item
+        step, lines = item
         results = []
         if step in self.dstep:
-            step_atoms, _ = self.crddetector.readcrd(item)
+            step_atoms, _ = self.crddetector.readcrd(lines)
             for atoma in self.dstep[step]:
                 # atom ID starts from 1
                 distances = step_atoms.get_distances(
@@ -248,11 +225,10 @@ class DatasetBuilder:
 
     def _writexyzfiles(self):
         self.dstep = defaultdict(list)
-        with open(os.path.join(self.trajatom_dir, "chooseatoms"), 'rb') as fc, Pool(self.nproc, maxtasksperchild=10000) as pool, tqdm(desc="Write structures", unit="structure", total=self._nstructure) as pbar:
-            semaphore = Semaphore(360)
+        with open(os.path.join(self.trajatom_dir, "chooseatoms"), 'rb') as fc:
             typecounter = Counter()
             for typefile, trajatomfilename in zip(fc, self.atombondtype):
-                for step, atoma in self.bytestolist(typefile):
+                for step, atoma in bytestolist(typefile):
                     self.dstep[step].append(
                         (atoma, trajatomfilename,
                          typecounter[trajatomfilename],
@@ -275,13 +251,12 @@ class DatasetBuilder:
             else:
                 bonditer = self.lineiter(self.bonddetector)
                 lineiter = zip(crditer, bonditer)
-            results = pool.imap_unordered(self._writestepxyzfile, self._produce(
-                semaphore, enumerate(lineiter), None), 100)
-            for result in results:
-                pbar.update(result)
-                semaphore.release()
-            pool.close()
-            pool.join()
+            results = run_mp(self.nproc, func=self._writestepxyzfile,
+                             l=lineiter, return_num=True,
+                             total=self._nstructure,
+                             desc="Write structures", unit="structure")
+            for _ in results:
+                pass
 
     @staticmethod
     def detect_multiplicity(symbols):
@@ -327,12 +302,11 @@ class DatasetBuilder:
             f.write('\n'.join(buff))
 
     def _writestepxyzfile(self, item):
-        (step, lines), _ = item
+        step, lines = item
         results = 0
         if step in self.dstep:
             if len(lines) == 2:
-                step_atoms, _ = self.crddetector.readcrd(
-                    ((step, lines[0]), None))
+                step_atoms, _ = self.crddetector.readcrd(lines[0])
                 molecules = self.bonddetector.readmolecule(lines[1])
             else:
                 molecules, step_atoms = self.bonddetector.readmolecule(lines)
@@ -388,40 +362,8 @@ class DatasetBuilder:
         self.bondtyperestore[typebytes] = typestr
         return typestr
 
-    @classmethod
-    def _compress(cls, x, isbytes=False):
-        """Compress the line.
-
-        This function reduces IO overhead to speed up the program.
-        """
-        if isbytes:
-            return pybase64.b64encode(
-                lz4.frame.compress(x)) + b'\n'
-        return pybase64.b64encode(lz4.frame.compress(
-            x.encode())) + b'\n'
-
-    @classmethod
-    def _decompress(cls, x, isbytes=False):
-        """Decompress the line."""
-        if isbytes:
-            return lz4.frame.decompress(pybase64.b64decode(
-                x.strip(),
-                validate=True))
-        return lz4.frame.decompress(pybase64.b64decode(
-            x.strip(),
-            validate=True)).decode()
-
-    @classmethod
-    def listtobytes(cls, x):
-        return cls._compress(pickle.dumps(x), isbytes=True)
-
-    @classmethod
-    def bytestolist(cls, x):
-        return pickle.loads(cls._decompress(x, isbytes=True))
-
     def lineiter(self, detector):
-        fns = [detector.filename] if isinstance(
-            detector.filename, str) else detector.filename
+        fns = must_be_list(detector.filename)
         for fn in fns:
             with open(fn) as f:
                 it = itertools.islice(itertools.zip_longest(
@@ -430,8 +372,7 @@ class DatasetBuilder:
                     yield line
 
     def erroriter(self):
-        fns = [self.errorfilename] if isinstance(
-            self.errorfilename, str) else self.errorfilename
+        fns = must_be_list(self.errorfilename)
         for fn in fns:
             with open(fn) as f:
                 it = itertools.islice(f, 1, None)
