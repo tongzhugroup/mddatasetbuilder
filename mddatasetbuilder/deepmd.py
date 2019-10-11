@@ -16,12 +16,12 @@ class PrepareDeePMD:
     """Prepare DeePMD training files."""
 
     def __init__(
-        self,
-        data_path,
-        deepmd_dir="data",
-        jsonfilenumber=1,
-        fmt="gaussian/log",
-        suffix=".log",
+            self,
+            data_path,
+            deepmd_dir="data",
+            jsonfilenumber=1,
+            fmt="gaussian/log",
+            suffix=".log",
     ):
         """Init the class."""
         self.data_path = data_path
@@ -31,7 +31,8 @@ class PrepareDeePMD:
         self.fmt = fmt
         self.suffix = suffix
         self.jsonfilenames = [
-            os.path.join(f"train{i}", f"train{i}.json") for i in range(jsonfilenumber)
+            os.path.join(f"train{i}", f"train{i}.json")
+            for i in range(jsonfilenumber)
         ]
 
     def preparedeepmd(self):
@@ -48,18 +49,15 @@ class PrepareDeePMD:
                     logfiles.append(os.path.join(root, logfile))
         multi_systems = dpdata.MultiSystems()
         with Pool() as pool:
-            for system in pool.imap_unordered(
-                self._preparedeepmdforLOG, tqdm(logfiles)
-            ):
+            for system in pool.imap_unordered(self._preparedeepmdforLOG,
+                                              tqdm(logfiles)):
                 multi_systems.append(system)
         multi_systems.to_deepmd_npy(self.deepmd_dir)
         for formula, system in multi_systems.systems.items():
             self.system_paths.append(os.path.join(self.deepmd_dir, formula))
             self.batch_size.append(
-                min(
-                    max(32 // (system["coords"].shape[1]), 1), system["coords"].shape[0]
-                )
-            )
+                min(max(32 // (system["coords"].shape[1]), 1),
+                    system["coords"].shape[0]))
         self.atomname = multi_systems.atom_names
 
     def _preparedeepmdforLOG(self, logfilename):
@@ -72,9 +70,11 @@ class PrepareDeePMD:
     def _writejson(self, jsonfilename):
         jsonpath = os.path.dirname(jsonfilename)
         try:
-            sel_a = [
-                {"C": 40, "H": 80, "O": 40}.get(symbol, 40) for symbol in self.atomname
-            ]
+            sel_a = [{
+                "C": 40,
+                "H": 80,
+                "O": 40
+            }.get(symbol, 40) for symbol in self.atomname]
         except KeyError:
             raise ("Unsupported atom types.")
         deepmd_json = {
@@ -88,12 +88,12 @@ class PrepareDeePMD:
                     "neuron": [25, 50, 100],
                     "resnet_dt": False,
                     "axis_neuron": 12,
-                    "seed": random.randint(0, 2 ** 32),
+                    "seed": random.randint(0, 2**32),
                 },
                 "fitting_net": {
                     "neuron": [240, 240, 240],
                     "resnet_dt": True,
-                    "seed": random.randint(0, 2 ** 32),
+                    "seed": random.randint(0, 2**32),
                 },
             },
             "learning_rate": {
@@ -112,20 +112,33 @@ class PrepareDeePMD:
             },
             "training": {
                 "systems": [
-                    os.path.relpath(path, jsonpath) for path in self.system_paths
+                    os.path.relpath(path, jsonpath)
+                    for path in self.system_paths
                 ],
-                "set_prefix": "set",
-                "stop_batch": 4000000,
-                "batch_size": self.batch_size,
-                "seed": random.randint(0, 2 ** 32),
-                "disp_file": "lcurve.out",
-                "disp_freq": 1000,
-                "numb_test": 1,
-                "save_freq": 1000,
-                "save_ckpt": "./model.ckpt",
-                "load_ckpt": "./model.ckpt",
-                "disp_training": True,
-                "time_training": True,
+                "set_prefix":
+                "set",
+                "stop_batch":
+                4000000,
+                "batch_size":
+                self.batch_size,
+                "seed":
+                random.randint(0, 2**32),
+                "disp_file":
+                "lcurve.out",
+                "disp_freq":
+                1000,
+                "numb_test":
+                1,
+                "save_freq":
+                1000,
+                "save_ckpt":
+                "./model.ckpt",
+                "load_ckpt":
+                "./model.ckpt",
+                "disp_training":
+                True,
+                "time_training":
+                True,
             },
         }
         if not os.path.exists(jsonpath):
@@ -136,19 +149,22 @@ class PrepareDeePMD:
 
 def _commandline():
     parser = argparse.ArgumentParser(description="Prepare DeePMD data")
-    parser.add_argument(
-        "-d", "--dir", help="Dataset dirs, default is data", default="data"
-    )
+    parser.add_argument("-d",
+                        "--dir",
+                        help="Dataset dirs, default is data",
+                        default="data")
     parser.add_argument(
         "-p",
         "--path",
         help="Gaussian LOG file path, e.g. dataset_md_GJF",
         required=True,
     )
-    parser.add_argument(
-        "-n", "--number", type=int, default=1, help="The number of train.json"
-    )
+    parser.add_argument("-n",
+                        "--number",
+                        type=int,
+                        default=1,
+                        help="The number of train.json")
     args = parser.parse_args()
-    PrepareDeePMD(
-        data_path=args.path, deepmd_dir=args.dir, jsonfilenumber=args.number
-    ).preparedeepmd()
+    PrepareDeePMD(data_path=args.path,
+                  deepmd_dir=args.dir,
+                  jsonfilenumber=args.number).preparedeepmd()

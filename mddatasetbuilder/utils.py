@@ -10,20 +10,20 @@ from tqdm import tqdm
 
 
 def multiopen(
-    pool,
-    func,
-    l,
-    semaphore=None,
-    nlines=None,
-    unordered=True,
-    return_num=False,
-    start=0,
-    extra=None,
-    interval=None,
-    bar=True,
-    desc=None,
-    unit="it",
-    total=None,
+        pool,
+        func,
+        l,
+        semaphore=None,
+        nlines=None,
+        unordered=True,
+        return_num=False,
+        start=0,
+        extra=None,
+        interval=None,
+        bar=True,
+        desc=None,
+        unit="it",
+        total=None,
 ):
     obj = l
     if nlines:
@@ -58,17 +58,19 @@ def compress(x, isbytes=False):
     This function reduces IO overhead to speed up the program.
     """
     if isbytes:
-        return pybase64.b64encode(lz4.frame.compress(x, compression_level=0)) + b"\n"
-    return (
-        pybase64.b64encode(lz4.frame.compress(x.encode(), compression_level=-1)) + b"\n"
-    )
+        return pybase64.b64encode(lz4.frame.compress(
+            x, compression_level=0)) + b"\n"
+    return (pybase64.b64encode(
+        lz4.frame.compress(x.encode(), compression_level=-1)) + b"\n")
 
 
 def decompress(x, isbytes=False):
     """Decompress the line."""
     if isbytes:
-        return lz4.frame.decompress(pybase64.b64decode(x.strip(), validate=True))
-    return lz4.frame.decompress(pybase64.b64decode(x.strip(), validate=True)).decode()
+        return lz4.frame.decompress(
+            pybase64.b64decode(x.strip(), validate=True))
+    return lz4.frame.decompress(pybase64.b64decode(x.strip(),
+                                                   validate=True)).decode()
 
 
 def listtobytes(x):
