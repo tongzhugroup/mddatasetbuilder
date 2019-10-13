@@ -1,0 +1,22 @@
+on: push
+name: Test Release to pypi
+jobs:
+  build:
+    name: mariamrf/py-package-publish-action@master
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@master
+    - name: Setup python
+      uses: actions/setup-python@v1
+      with:
+        python-version: 3.7
+        architecture: x64
+    - run: pip install wheel
+    - run: python setup.py sdist bdist_wheel
+    - name: Publish a Python distribution to PyPI
+      uses: pypa/gh-action-pypi-publish@master
+      with:
+        user: pypi-AgEIcHlwaS5vcmcCJGMwODE5NDM3LWM1MzctNDg3Zi1iMTcxLWM1NWYzNzU2MjcwOQACQXsicGVybWlzc2lvbnMiOiB7InByb2plY3RzIjogWyJtZGRhdGFzZXRidWlsZGVyIl19LCAidmVyc2lvbiI6IDF9AAAGIA7iO2UW5XqSxjtSnOx16C_Lv6d3A7CTZx0VxGmEf7TD
+        password: ${{ secrets.pypi_password }}
+        repository_url: https://test.pypi.org/legacy/
+
