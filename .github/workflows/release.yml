@@ -16,5 +16,5 @@ jobs:
     - name: Publish a Python distribution to PyPI
       uses: pypa/gh-action-pypi-publish@master
       with:
-        user: njzjz
+        user: pypi-AgEIcHlwaS5vcmcCJGMwODE5NDM3LWM1MzctNDg3Zi1iMTcxLWM1NWYzNzU2MjcwOQACQXsicGVybWlzc2lvbnMiOiB7InByb2plY3RzIjogWyJtZGRhdGFzZXRidWlsZGVyIl19LCAidmVyc2lvbiI6IDF9AAAGIA7iO2UW5XqSxjtSnOx16C_Lv6d3A7CTZx0VxGmEf7TD
         password: ${{ secrets.pypi_password }}
