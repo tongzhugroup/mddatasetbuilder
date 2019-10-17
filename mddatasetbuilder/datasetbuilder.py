@@ -44,7 +44,7 @@ class DatasetBuilder:
             clusteratom=None, bondfilename=None,
             dumpfilename="dump.reaxc", dataset_name="md", cutoff=5,
             stepinterval=1, n_clusters=10000, n_each=1,
-            qmkeywords="%nproc=4\n#mn15/6-31g(d,p) force", nproc=None, pbc=True,
+            qmkeywords="%nproc=4\n#force mn15/6-31g(d,p) force", nproc=None, pbc=True,
             fragment=True, errorfilename=None, errorlimit=0.):
         """Init the builder."""
         print(__doc__)
@@ -403,7 +403,7 @@ def _commandline():
     parser.add_argument(
         '-k', '--qmkeywords',
         help='QM keywords (default is %%nproc=4 #mn15/6-31g**)',
-        default="%nproc=4\n#mn15/6-31g**")
+        default="%nproc=4\n#force mn15/6-31g**")
     parser.add_argument(
         '-n', '--name', help='Dataset name (default is md)', default="md")
     parser.add_argument(
