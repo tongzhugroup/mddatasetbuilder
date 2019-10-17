@@ -5,7 +5,7 @@ Run 'datasetbuilder -h' for more details.
 
 __author__ = "Jinzhe Zeng"
 __email__ = "jzzeng@stu.ecnu.edu.cn"
-__update__ = '2019-07-11'
+__update__ = '2019-10-17'
 __date__ = '2018-07-18'
 
 import argparse
@@ -44,8 +44,8 @@ class DatasetBuilder:
             clusteratom=None, bondfilename=None,
             dumpfilename="dump.reaxc", dataset_name="md", cutoff=5,
             stepinterval=1, n_clusters=10000, n_each=1,
-            qmkeywords="%nproc=4\n#force mn15/6-31g(d,p) force", nproc=None, pbc=True,
-            fragment=True, errorfilename=None, errorlimit=0.):
+            qmkeywords="%nproc=4\n#force mn15/6-31g(d,p)", nproc=None, pbc=True,
+            fragment=False, errorfilename=None, errorlimit=0., atom_pref=False):
         """Init the builder."""
         print(__doc__)
         print(f"Author:{__author__}  Email:{__email__}")
@@ -77,6 +77,7 @@ class DatasetBuilder:
         self._nstructure = 0
         self.bondtyperestore = {}
         self.errorfilename = errorfilename
+        self.atom_pref = atom_pref
 
     def builddataset(self, writegjf=True):
         """Build a dataset."""
@@ -347,6 +348,7 @@ class DatasetBuilder:
                             self.gjfdir, folder,
                             f'{self.xyzfilename}_{trajatomfilename}_{atomtypenum}.gjf'),
                         takenatomidindex, cutoffatoms)
+                if self.atom_pref:
                     np.save(os.path.join(
                         self.gjfdir, folder,
                         f'{self.xyzfilename}_{trajatomfilename}_{atomtypenum}.atom_pref.npy'),
