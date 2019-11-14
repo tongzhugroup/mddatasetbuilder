@@ -10,6 +10,15 @@ jobs:
       with:
         python-version: '3.7'
         architecture: 'x64'
+    - name: pip cache
+      uses: actions/cache@v1
+      with:
+        path: ~/.cache/pip
+        key:
+          ${{ runner.os }}-pip-${{ hashFiles('**/setup.py')
+          }}
+        restore-keys: |
+          ${{ runner.os }}-pip-
     - run: pip install tox-conda
     - run: tox
       env:
