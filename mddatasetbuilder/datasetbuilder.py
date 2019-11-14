@@ -293,8 +293,8 @@ class DatasetBuilder:
                 [f'0 {multiplicity}' for multiplicity in multiplicities]))
             buff.extend((*chk, kw0, title, multiplicities_str))
             for index, atoms in enumerate(takenatomidindex, 1):
-                buff.extend(map(lambda atom: '{}(Fragment={}) {:.5f} {:.5f} {:.5f}'.format(
-                    atom.symbol, index, *atom.position), atoms_whole[atoms]))
+                buff.extend(['{}(Fragment={}) {:.5f} {:.5f} {:.5f}'.format(
+                    atom.symbol, index, *atom.position) for atom in atoms_whole[atoms]])
         for kw in itertools.islice(self.qmkeywords, 1, None):
             buff.extend((connect, *chk, kw,
                          title, f'0 {multiplicity_whole}', '\n'))
