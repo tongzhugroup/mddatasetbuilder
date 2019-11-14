@@ -402,8 +402,14 @@ def _commandline():
         default=10000)
     parser.add_argument(
         '-k', '--qmkeywords',
-        help='QM keywords (default is %%nproc=4 #mn15/6-31g**)',
-        default="%nproc=4\n#mn15/6-31g**")
+        help='QM keywords (default is mn15/6-31g**)',
+        default="mn15/6-31g**")
+    parser.add_argument(
+        '--nprocjob',
+        help='CPU number that each job uses.',
+        default=4,
+        type=int
+    )
     parser.add_argument(
         '-n', '--name', help='Dataset name (default is md)', default="md")
     parser.add_argument(
@@ -415,6 +421,6 @@ def _commandline():
         atomname=args.atomname, bondfilename=args.bondfile,
         dumpfilename=args.dumpfile, dataset_name=args.name, cutoff=args.cutoff,
         stepinterval=args.interval, n_clusters=args.size,
-        qmkeywords=args.qmkeywords, nproc=args.nproc,
+        qmkeywords=f"%nproc={args.nprocjob}\n#{args.qmkeywords}", nproc=args.nproc,
         errorfilename=args.errorfile, errorlimit=args.errorlimit
     ).builddataset()
