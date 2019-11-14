@@ -1,4 +1,5 @@
 from multiprocessing import Pool, Semaphore
+import os
 import logging
 import itertools
 import pickle
