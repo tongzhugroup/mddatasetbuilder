@@ -142,7 +142,6 @@ class DetectDump(Detect):
         (step, lines), needlerror = item
         if needlerror:
             trajline, errorline = lines
-            item = (step, trajline), None
             lerror = np.fromstring(errorline, dtype=float, sep=' ')[7:]
         d = defaultdict(list)
         step_atoms, ids = self.readcrd(lines)
@@ -178,11 +177,6 @@ class DetectDump(Detect):
             ghost_atoms = repeated_atoms[nearest]
             realnumber = np.where(nearest)[0] % atomnumber
             step_atoms += ghost_atoms
-        xyzstring = ''.join((f"{atomnumber}\n{__name__}\n", "\n".join(
-            [f'{s:2s} {x:22.15f} {y:22.15f} {z:22.15f}'
-             for s, (x, y, z) in zip(
-                 step_atoms.get_chemical_symbols(),
-                 step_atoms.positions)])))
         # Use openbabel to connect atoms
         mol = openbabel.OBMol()
         mol.BeginModify()
