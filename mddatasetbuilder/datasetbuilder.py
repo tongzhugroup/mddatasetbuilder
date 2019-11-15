@@ -5,7 +5,7 @@ Run 'datasetbuilder -h' for more details.
 
 __author__ = "Jinzhe Zeng"
 __email__ = "jzzeng@stu.ecnu.edu.cn"
-__update__ = '2019-07-11'
+__update__ = '2019-10-17'
 __date__ = '2018-07-18'
 
 import argparse
@@ -27,7 +27,7 @@ from sklearn import preprocessing
 from sklearn.cluster import MiniBatchKMeans
 
 from .detect import Detect
-from .utils import run_mp, bytestolist, listtobytes, must_be_list
+from .utils import run_mp, bytestolist, listtobytes, must_be_list, _mkdir
 
 try:
     __version__ = get_distribution(__name__).version
@@ -44,8 +44,8 @@ class DatasetBuilder:
             clusteratom=None, bondfilename=None,
             dumpfilename="dump.reaxc", dataset_name="md", cutoff=5,
             stepinterval=1, n_clusters=10000, n_each=1,
-            qmkeywords="%nproc=4\n#mn15/6-31g(d,p) force", nproc=None, pbc=True,
-            fragment=True, errorfilename=None, errorlimit=0.):
+            qmkeywords="%nproc=4\n#force mn15/6-31g(d,p)", nproc=None, pbc=True,
+            fragment=False, errorfilename=None, errorlimit=0., atom_pref=False):
         """Init the builder."""
         print(__doc__)
         print(f"Author:{__author__}  Email:{__email__}")
@@ -77,6 +77,7 @@ class DatasetBuilder:
         self._nstructure = 0
         self.bondtyperestore = {}
         self.errorfilename = errorfilename
+        self.atom_pref = atom_pref
 
     def builddataset(self, writegjf=True):
         """Build a dataset."""
@@ -92,9 +93,9 @@ class DatasetBuilder:
                             self._writecoulumbmatrix(bondtype, f)
                             gc.collect()
                 elif runstep == 2:
-                    self._mkdir(self.dataset_dir)
+                    _mkdir(self.dataset_dir)
                     if self.writegjf:
-                        self._mkdir(self.gjfdir)
+                        _mkdir(self.gjfdir)
                     self._writexyzfiles()
                 gc.collect()
                 timearray.append(time.time())
@@ -104,7 +105,7 @@ class DatasetBuilder:
     def _readtimestepsbond(self):
         # added on 2018-12-15
         stepatomfiles = {}
-        self._mkdir(self.trajatom_dir)
+        _mkdir(self.trajatom_dir)
         results = run_mp(self.nproc, func=self.bonddetector.readatombondtype,
                          l=zip(self.lineiter(self.bonddetector), self.erroriter(
                          )) if self.errorfilename is not None else self.lineiter(self.bonddetector),
@@ -216,13 +217,6 @@ class DatasetBuilder:
         index = np.concatenate(choosedidx)
         return index
 
-    @classmethod
-    def _mkdir(cls, path):
-        try:
-            os.makedirs(path)
-        except OSError:
-            pass
-
     def _writexyzfiles(self):
         self.dstep = defaultdict(list)
         with open(os.path.join(self.trajatom_dir, "chooseatoms"), 'rb') as fc:
@@ -241,10 +235,10 @@ class DatasetBuilder:
             foldernames = list(map(lambda i: str(i).zfill(
                 self.foldermaxlength), range(foldernum)))
             for folder in foldernames:
-                self._mkdir(os.path.join(self.dataset_dir, folder))
+                _mkdir(os.path.join(self.dataset_dir, folder))
             if self.writegjf:
                 for folder in foldernames:
-                    self._mkdir(os.path.join(self.gjfdir, folder))
+                    _mkdir(os.path.join(self.gjfdir, folder))
             crditer = self.lineiter(self.crddetector)
             if self.crddetector is self.bonddetector:
                 lineiter = crditer
@@ -292,8 +286,8 @@ class DatasetBuilder:
                 [f'0 {multiplicity}' for multiplicity in multiplicities]))
             buff.extend((*chk, kw0, title, multiplicities_str))
             for index, atoms in enumerate(takenatomidindex, 1):
-                buff.extend(map(lambda atom: '{}(Fragment={}) {:.5f} {:.5f} {:.5f}'.format(
-                    atom.symbol, index, *atom.position), atoms_whole[atoms]))
+                buff.extend(['{}(Fragment={}) {:.5f} {:.5f} {:.5f}'.format(
+                    atom.symbol, index, *atom.position) for atom in atoms_whole[atoms]])
         for kw in itertools.islice(self.qmkeywords, 1, None):
             buff.extend((connect, *chk, kw,
                          title, f'0 {multiplicity_whole}', '\n'))
@@ -347,6 +341,7 @@ class DatasetBuilder:
                             self.gjfdir, folder,
                             f'{self.xyzfilename}_{trajatomfilename}_{atomtypenum}.gjf'),
                         takenatomidindex, cutoffatoms)
+                if self.atom_pref:
                     np.save(os.path.join(
                         self.gjfdir, folder,
                         f'{self.xyzfilename}_{trajatomfilename}_{atomtypenum}.atom_pref.npy'),
