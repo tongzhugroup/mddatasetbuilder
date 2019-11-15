@@ -3,9 +3,7 @@
 import argparse
 import json
 import os
-import pickle
 import random
-from collections import Counter
 from multiprocessing import Pool
 
 from tqdm import tqdm
@@ -66,7 +64,7 @@ class PrepareDeePMD:
             sel_a = [{"C": 40, "H": 80, "O": 40}.get(
                 symbol, 40) for symbol in self.atomname]
         except KeyError:
-            raise("Unsupported atom types.")
+            raise RuntimeError("Unsupported atom types.")
         deepmd_json = {
             "model": {
                 "type_map":     self.atomname,
