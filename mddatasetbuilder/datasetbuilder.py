@@ -27,7 +27,7 @@ from sklearn import preprocessing
 from sklearn.cluster import MiniBatchKMeans
 
 from .detect import Detect
-from .utils import run_mp, bytestolist, listtobytes, must_be_list
+from .utils import run_mp, bytestolist, listtobytes, must_be_list, _mkdir
 
 try:
     __version__ = get_distribution(__name__).version
@@ -93,9 +93,9 @@ class DatasetBuilder:
                             self._writecoulumbmatrix(bondtype, f)
                             gc.collect()
                 elif runstep == 2:
-                    self._mkdir(self.dataset_dir)
+                    _mkdir(self.dataset_dir)
                     if self.writegjf:
-                        self._mkdir(self.gjfdir)
+                        _mkdir(self.gjfdir)
                     self._writexyzfiles()
                 gc.collect()
                 timearray.append(time.time())
@@ -105,7 +105,7 @@ class DatasetBuilder:
     def _readtimestepsbond(self):
         # added on 2018-12-15
         stepatomfiles = {}
-        self._mkdir(self.trajatom_dir)
+        _mkdir(self.trajatom_dir)
         results = run_mp(self.nproc, func=self.bonddetector.readatombondtype,
                          l=zip(self.lineiter(self.bonddetector), self.erroriter(
                          )) if self.errorfilename is not None else self.lineiter(self.bonddetector),
@@ -217,13 +217,6 @@ class DatasetBuilder:
         index = np.concatenate(choosedidx)
         return index
 
-    @classmethod
-    def _mkdir(cls, path):
-        try:
-            os.makedirs(path)
-        except OSError:
-            pass
-
     def _writexyzfiles(self):
         self.dstep = defaultdict(list)
         with open(os.path.join(self.trajatom_dir, "chooseatoms"), 'rb') as fc:
@@ -242,10 +235,10 @@ class DatasetBuilder:
             foldernames = list(map(lambda i: str(i).zfill(
                 self.foldermaxlength), range(foldernum)))
             for folder in foldernames:
-                self._mkdir(os.path.join(self.dataset_dir, folder))
+                _mkdir(os.path.join(self.dataset_dir, folder))
             if self.writegjf:
                 for folder in foldernames:
-                    self._mkdir(os.path.join(self.gjfdir, folder))
+                    _mkdir(os.path.join(self.gjfdir, folder))
             crditer = self.lineiter(self.crddetector)
             if self.crddetector is self.bonddetector:
                 lineiter = crditer
