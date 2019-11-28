@@ -1,13 +1,14 @@
 # MDDatasetBuilder
 
+[![arxiv:1910.12690](http://img.shields.io/badge/arXiv-1911.12252-B31B1B.svg?maxAge=86400)](https://arxiv.org/abs/1911.12252)
 [![python version](https://img.shields.io/pypi/pyversions/mddatasetbuilder.svg?logo=python&logoColor=white)](https://pypi.org/project/mddatasetbuilder)
 [![PyPI](https://img.shields.io/pypi/v/mddatasetbuilder.svg)](https://pypi.org/project/mddatasetbuilder)
-[![Build Status](https://travis-ci.com/njzjz/mddatasetbuilder.svg?branch=master)](https://travis-ci.com/njzjz/mddatasetbuilder)
-[![Coverage Status](https://coveralls.io/repos/github/njzjz/mddatasetbuilder/badge.svg?branch=master)](https://coveralls.io/github/njzjz/mddatasetbuilder?branch=master)
 [![codecov](https://codecov.io/gh/njzjz/mddatasetbuilder/branch/master/graph/badge.svg)](https://codecov.io/gh/njzjz/mddatasetbuilder)
 [![Research Group](https://img.shields.io/website-up-down-green-red/http/computchem.cn.svg?label=Research%20Group)](http://computchem.cn)
 
 MDDatasetBuilder is a script to build molecular dynamics (MD) datasets for neural networks from given LAMMPS trajectories automatically.
+
+Neural Network Based in Silico Simulation of Combustion Reactions, arXiv:1911.12252
 
 **Author**: Jinzhe Zeng
 
