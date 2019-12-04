@@ -58,6 +58,7 @@ if __name__ == '__main__':
               "Operating System :: Microsoft :: Windows",
               "Programming Language :: Python :: 3.6",
               "Programming Language :: Python :: 3.7",
+              "Programming Language :: Python :: 3.8",
               "Topic :: Scientific/Engineering :: Chemistry",
               "Topic :: Software Development :: Libraries :: Python Modules",
               "Topic :: Software Development :: Version Control :: Git",
