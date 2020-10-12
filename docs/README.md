@@ -4,11 +4,11 @@
 [![python version](https://img.shields.io/pypi/pyversions/mddatasetbuilder.svg?logo=python&logoColor=white)](https://pypi.org/project/mddatasetbuilder)
 [![PyPI](https://img.shields.io/pypi/v/mddatasetbuilder.svg)](https://pypi.org/project/mddatasetbuilder)
 [![codecov](https://codecov.io/gh/njzjz/mddatasetbuilder/branch/master/graph/badge.svg)](https://codecov.io/gh/njzjz/mddatasetbuilder)
-[![Research Group](https://img.shields.io/website-up-down-green-red/http/computchem.cn.svg?label=Research%20Group)](http://computchem.cn)
+[![Research Group](https://img.shields.io/website-up-down-green-red/https/computchem.cn.svg?label=Research%20Group)](https://computchem.cn)
 
 MDDatasetBuilder is a script to construct reference datasets for the training of neural network potentials from given LAMMPS trajectories.
 
-Neural Network Based in Silico Simulation of Combustion Reactions, arXiv:1911.12252
+Complex Reaction Processes in Combustion Unraveled by Neural Network Based Molecular Dynamics Simulation, Nature Communications (in press), arXiv:1911.12252
 
 **Author**: Jinzhe Zeng
 
@@ -57,4 +57,4 @@ cd train && dp train train.json
 The runtime of the software depends on the amount of data. It is more suited to running on a server rather than desktop computer.
 
 ### DP-GEN
-The MDDatasetBuilder package has been integrated into [DP-GEN](https://github.com/deepmodeling/dpgen) software.
+The MDDatasetBuilder package has been integrated with [DP-GEN](https://github.com/deepmodeling/dpgen) software.
