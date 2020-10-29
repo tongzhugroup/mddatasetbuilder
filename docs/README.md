@@ -1,6 +1,6 @@
 # MDDatasetBuilder
 
-[![arxiv:1910.12690](http://img.shields.io/badge/arXiv-1911.12252-B31B1B.svg?maxAge=86400)](https://arxiv.org/abs/1911.12252)
+[![DOI:10.1039/C9CP05091D](https://zenodo.org/badge/DOI/10.1038/s41467-020-19497-z.svg)](https://doi.org/10.1038/s41467-020-19497-z)
 [![python version](https://img.shields.io/pypi/pyversions/mddatasetbuilder.svg?logo=python&logoColor=white)](https://pypi.org/project/mddatasetbuilder)
 [![PyPI](https://img.shields.io/pypi/v/mddatasetbuilder.svg)](https://pypi.org/project/mddatasetbuilder)
 [![codecov](https://codecov.io/gh/njzjz/mddatasetbuilder/branch/master/graph/badge.svg)](https://codecov.io/gh/njzjz/mddatasetbuilder)
@@ -8,7 +8,7 @@
 
 MDDatasetBuilder is a script to construct reference datasets for the training of neural network potentials from given LAMMPS trajectories.
 
-Complex Reaction Processes in Combustion Unraveled by Neural Network Based Molecular Dynamics Simulation, Nature Communications (in press), arXiv:1911.12252
+Complex Reaction Processes in Combustion Unraveled by Neural Network Based Molecular Dynamics Simulation, Nature Communications (in press), DOI: [10.1038/s41467-020-19497-z](https://doi.org/10.1038/s41467-020-19497-z)
 
 **Author**: Jinzhe Zeng
 
