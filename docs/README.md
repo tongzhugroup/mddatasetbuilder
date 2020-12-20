@@ -8,7 +8,7 @@
 
 MDDatasetBuilder is a script to construct reference datasets for the training of neural network potentials from given LAMMPS trajectories.
 
-Complex Reaction Processes in Combustion Unraveled by Neural Network Based Molecular Dynamics Simulation, Nature Communications, **11**, 5713 (2020), DOI: [10.1038/s41467-020-19497-z](https://doi.org/10.1038/s41467-020-19497-z)
+Complex reaction processes in combustion unraveled by neural network-based molecular dynamics simulation, Nature Communications, **11**, 5713 (2020), DOI: [10.1038/s41467-020-19497-z](https://doi.org/10.1038/s41467-020-19497-z)
 
 **Author**: Jinzhe Zeng
 
