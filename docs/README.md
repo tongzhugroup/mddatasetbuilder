@@ -16,15 +16,10 @@ Complex reaction processes in combustion unraveled by neural network-based molec
 
 ## Installation
 
-Firstly, the latest version of [Anaconda or Miniconda](https://conda.io/projects/continuumio-conda/en/latest/user-guide/install/index.html) shoule be installed. And then use conda to install [openbabel](https://github.com/openbabel/openbabel):
+MDDatasetBuilder can be installed with pip:
 
-```sh
-conda install openbabel -c conda-forge
 ```
-
-Then install mddatasetbuilder can be installed with pip:
-```
-pip install git+https://github.com/tongzhugroup/mddatasetbuilder
+pip install mddatasetbuilder
 ```
 
 The installation process should be very quick, taking only a few minutes on a “normal” desktop computer. 
