@@ -16,15 +16,10 @@ Complex reaction processes in combustion unraveled by neural network-based molec
 
 ## Installation
 
-Firstly, the latest version of [Anaconda or Miniconda](https://conda.io/projects/continuumio-conda/en/latest/user-guide/install/index.html) shoule be installed. And then use conda to install [openbabel](https://github.com/openbabel/openbabel):
+MDDatasetBuilder can be installed with pip:
 
-```sh
-conda install openbabel -c conda-forge
 ```
-
-Then install mddatasetbuilder can be installed with pip:
-```
-pip install git+https://github.com/tongzhugroup/mddatasetbuilder
+pip install mddatasetbuilder
 ```
 
 The installation process should be very quick, taking only a few minutes on a “normal” desktop computer. 
@@ -57,4 +52,10 @@ cd train && dp train train.json
 The runtime of the software depends on the amount of data. It is more suited to running on a server rather than desktop computer.
 
 ### DP-GEN
-The MDDatasetBuilder package has been integrated with [DP-GEN](https://github.com/deepmodeling/dpgen) software.
+The MDDatasetBuilder package has been integrated with [DP-GEN](https://github.com/deepmodeling/dpgen) software:
+```bash
+dpgen init_reaction reaction.json machine.json
+```
+where an example of `reaction.json` can be found [here](https://github.com/deepmodeling/dpgen/blob/v0.9.1/examples/init/reaction.json), and `machine.json` should include the following keys:
+`reaxff_command`, `reaxff_resources`, `reaxff_machine`, `build_command`, `build_resources`, `build_machine`, `fp_command`, `fp_resources`, `fp_machine`, and `fp_group_size`.
+`reaxff_command` is the LAMMPS command, `build_command` is the MDDatasetbuilder command, and `fp_command` is the Gaussian 16 command.
