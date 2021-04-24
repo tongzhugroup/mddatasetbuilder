@@ -1,6 +1,6 @@
 # MDDatasetBuilder
 
-[![DOI:10.1039/C9CP05091D](https://zenodo.org/badge/DOI/10.1038/s41467-020-19497-z.svg)](https://doi.org/10.1038/s41467-020-19497-z)
+[![DOI:10.1038/s41467-020-19497-z](https://img.shields.io/badge/DOI-10.1038%2Fs41467--020--19497--z-blue)](https://doi.org/10.1038/s41467-020-19497-z)
 [![python version](https://img.shields.io/pypi/pyversions/mddatasetbuilder.svg?logo=python&logoColor=white)](https://pypi.org/project/mddatasetbuilder)
 [![PyPI](https://img.shields.io/pypi/v/mddatasetbuilder.svg)](https://pypi.org/project/mddatasetbuilder)
 [![codecov](https://codecov.io/gh/njzjz/mddatasetbuilder/branch/master/graph/badge.svg)](https://codecov.io/gh/njzjz/mddatasetbuilder)
