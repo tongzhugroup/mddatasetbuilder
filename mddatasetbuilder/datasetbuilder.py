@@ -1,6 +1,11 @@
 """MDDatasetBuilder.
 
 Run 'datasetbuilder -h' for more details.
+
+Please cite
+-----------
+Complex reaction processes in combustion unraveled by neural network-based
+molecular dynamics simulation, Nature Communications, 11, 5713 (2020).
 """
 
 __author__ = "Jinzhe Zeng"
@@ -37,12 +42,52 @@ except DistributionNotFound:
 
 
 class DatasetBuilder:
-    """Dataset Builder."""
+    """Dataset Builder.
+    
+    Parameters
+    ----------
+    atomname: list, optional, default=['C', 'H', 'O']
+        Atom names.
+    clusteratom: list, optional, default=None
+        Cluster elements. If None (default), all elements will be clustered.
+    bondfilename: str, optional, default=None
+        The filename of LAMMPS bond file. If None (default), bond files will
+        not be used.
+    dumpfilename: str, optional, default="dump.reaxc"
+        The filename of LAMMPS dump file.
+    dataset_name: str, optional, default="md"
+        The name of dataset, which will be part of filenames of dataset.
+    cutoff: float, optional, default=5.
+        The cutoff for taking clusters.
+    stepinterval: int, optional, default=1
+        The interval for taking frames.
+    n_clusters: int, optional, default=10000
+        The maximum number of clusters for each atom type.
+    n_each: int, optional, default=1
+        The numbers of structures taken from each cluster.
+    qmkeywords: str, optional, default="%nproc=4\n#force mn15/6-31g(d,p)"
+        Gaussian keywords.
+    nproc: int, optional, default=None
+        The number of processors for building the dataset. If None, all processors
+        will be used.
+    pbc: bool, optional, default=True
+        If True (default), apply the periodic boundary conditions (PBC).
+    fragment: bool, optional, default=False
+        Use `Guess=Fragment` for Gaussian calculation. See https://gaussian.com/guess/?tabid=1#Guess_keyword__Fragment_option
+        for details.
+    errorfilename: str, optional, default=None
+        The atomic model deviation file of DeePMD-kit. If None, no file will be used.
+    errorlimit: float, optional, default=0.
+        The lower bound of the model deviation. The atom will be considered "accurate"
+        if the atomic model deviation is less than this value.
+    atom_pref: bool, optional, default=False
+        (Deprecated) Generator atom_pref information for each cluster.
+    """
 
     def __init__(
             self, atomname=None,
             clusteratom=None, bondfilename=None,
-            dumpfilename="dump.reaxc", dataset_name="md", cutoff=5,
+            dumpfilename="dump.reaxc", dataset_name="md", cutoff=5.,
             stepinterval=1, n_clusters=10000, n_each=1,
             qmkeywords="%nproc=4\n#force mn15/6-31g(d,p)", nproc=None, pbc=True,
             fragment=False, errorfilename=None, errorlimit=0., atom_pref=False):
@@ -80,7 +125,13 @@ class DatasetBuilder:
         self.atom_pref = atom_pref
 
     def builddataset(self, writegjf=True):
-        """Build a dataset."""
+        """Build a dataset.
+        
+        Parameters
+        ----------
+        writegjf: bool, optional, default=True
+            Write gjf files.
+        """
         self.writegjf = writegjf
         timearray = [time.time()]
         with tempfile.TemporaryDirectory() as self.trajatom_dir:
@@ -103,6 +154,7 @@ class DatasetBuilder:
                     f"Step {len(timearray)-1} Done! Time consumed (s): {timearray[-1]-timearray[-2]:.3f}")
 
     def _readtimestepsbond(self):
+        """Read and store the bond of each atom in each frame."""
         # added on 2018-12-15
         stepatomfiles = {}
         _mkdir(self.trajatom_dir)
@@ -127,6 +179,15 @@ class DatasetBuilder:
             stepatomfile.close()
 
     def _writecoulumbmatrix(self, trajatomfilename, fc):
+        """Write Coulumb matrix.
+        
+        Parameters
+        ----------
+        trajatomfilename: str
+            The name of the bond, for example, C1111.
+        fc: File object
+            The File object for storing selected atoms.
+        """
         self.dstep = {}
         with open(os.path.join(self.trajatom_dir, f"stepatom.{trajatomfilename}"), 'rb') as f:
             for line in f:
@@ -173,6 +234,27 @@ class DatasetBuilder:
         self._nstructure += len(choosedindexs)
 
     def _writestepmatrix(self, item):
+        """Calculate Coulumb atoms for each atom.
+
+        Parameters
+        ----------
+        item: tuple (step, lines) 
+            step: int
+                The timestep of the frame.
+            lines: list of strs
+                Lines of the fram in the LAMMPS dump file.
+
+        Returns
+        -------
+        results: list of tuples
+            The tuple (stepatoma, columbmatrix, symbols) contains:
+                stepatoma: numpy.ndarray (2,)
+                    Contains two elements: step and atom ID.
+                columbmatrix: numpy.ndarray (N,)
+                    The eigenvalues of columb matrix.
+                symbols: collections.Counter
+                    The elements of atoms.
+        """
         step, lines = item
         results = []
         if step in self.dstep:
@@ -190,6 +272,18 @@ class DatasetBuilder:
         return results
 
     def _calcoulumbmatrix(self, atoms):
+        """Calculate Coulumb matrix for atoms.
+
+        Parameters
+        ----------
+        atoms: ase.Atoms
+            Atoms to calculate Coulumb matrix.
+        
+        Returns
+        -------
+        numpy.darray (N,)
+            The eigenvalues of columb matrix.
+        """
         # https://github.com/crcollins/molml/blob/master/molml/utils.py
         top = np.outer(atoms.numbers, atoms.numbers).astype(np.float64)
         r = atoms.get_all_distances(mic=True)
@@ -204,6 +298,22 @@ class DatasetBuilder:
 
     @classmethod
     def _clusterdatas(cls, X, n_clusters, n_each=1):
+        """Select data using Mini Batch Kmeans.
+
+        Parameters
+        ----------
+        X: numpy.darray
+            The input data.
+        n_clusters: int
+            The number of clusters.
+        n_each: int, optional, default=1
+            The number of structures in each cluster.
+        
+        Returns
+        -------
+        numpy.ndarray
+            The selected index.
+        """
         min_max_scaler = preprocessing.MinMaxScaler()
         X = np.array(min_max_scaler.fit_transform(X))
         clus = MiniBatchKMeans(n_clusters=n_clusters, init_size=(
@@ -218,6 +328,21 @@ class DatasetBuilder:
         return index
 
     def _writexyzfiles(self):
+        """Write xyz files.
+        
+        Notes
+        -----
+        The functions writes a list to `self.dstep[step]`, where the list
+        contains a tuple (atoma, trajatomfilename, itype, itotal):
+            atoma: int
+                the selected atom index (starts from 1)
+            trajatomfilename: str
+                the name of the bond, such as C1111
+            itype: int
+                index of structures in the bond type
+            itotal: int
+                index of structures in all
+        """
         self.dstep = defaultdict(list)
         with open(os.path.join(self.trajatom_dir, "chooseatoms"), 'rb') as fc:
             typecounter = Counter()
@@ -254,6 +379,18 @@ class DatasetBuilder:
 
     @staticmethod
     def detect_multiplicity(symbols):
+        """Caculate multiplicity.
+
+        Parameters
+        ----------
+        symbols: numpy.ndarray
+            The atomic symbols.
+
+        Returns
+        -------
+        multiplicity: int
+            The multiplicity.
+        """
         # currently only support charge=0
         # oxygen -> 3
         if np.count_nonzero(symbols == ["O"]) == 2 and symbols.size == 2:
@@ -263,6 +400,17 @@ class DatasetBuilder:
         return n_total % 2 + 1
 
     def _convertgjf(self, gjffilename, takenatomidindex, atoms_whole):
+        """Generate GJF files.
+
+        Parameters
+        ----------
+        gjffilename: str
+            The filename of GJF file.
+        takenatomidindex: list
+            The index of taken atoms.
+        atoms_whole: ase.Atoms
+            The whole atoms in the frame.
+        """
         buff = []
         multiplicities = list(map(lambda atoms: self.detect_multiplicity(
             atoms_whole[atoms].get_chemical_symbols()), takenatomidindex))
@@ -296,6 +444,21 @@ class DatasetBuilder:
             f.write('\n'.join(buff))
 
     def _writestepxyzfile(self, item):
+        """Write xyz files and GJF files in a timestep.
+        
+        Parameters
+        ----------
+        item: tuple (step, lines) 
+            step: int
+                The timestep of the frame.
+            lines: list of strs or list of lists of strs
+                Lines of the fram in the LAMMPS dump file (and bond file).
+
+        Returns
+        -------
+        results: int
+            The number of written files.
+        """
         step, lines = item
         results = 0
         if step in self.dstep:

@@ -92,6 +92,18 @@ class DetectBond(Detect):
         return d, step
 
     def readmolecule(self, lines):
+        """Returns molecules from lines.
+
+        Parameters
+        ----------
+        lines: list of strs
+            Lines of LAMMPS bond files.
+
+        Returns
+        -------
+        molecules: list
+            Indexes of atoms in molecules.
+        """
         # copy from reacnetgenerator on 2018-12-15
         bond = [None]*self._N
         for line in lines:
@@ -155,6 +167,20 @@ class DetectDump(Detect):
         return d, step
 
     def readmolecule(self, lines):
+        """Returns molecules from lines.
+
+        Parameters
+        ----------
+        lines: list of strs
+            Lines of LAMMPS bond files.
+
+        Returns
+        -------
+        molecules: list
+            Indexes of atoms in molecules.
+        step_atoms: ase.Atoms
+            The atoms of the frame.
+        """
         bond = [None]*self._N
         step_atoms, _ = self.readcrd(lines)
         bond = self._crd2bond(step_atoms, readlevel=False)
