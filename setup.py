@@ -10,7 +10,7 @@ if __name__ == '__main__':
     with open(os.path.join(this_directory, 'docs', 'README.md'), encoding='utf-8') as f:
         long_description = f.read()
 
-    tests_require = ['requests', 'pytest-sugar', 'pytest-cov', 'cython'],
+    tests_require = ['requests', 'pytest-sugar', 'pytest-cov', 'cython', 'fakegaussian'],
     define_macros = []
     if os.environ.get("DEBUG", 0):
         define_macros.extend(
