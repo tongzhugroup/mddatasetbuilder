@@ -17,6 +17,8 @@ import pytest
 from tqdm import tqdm
 
 import mddatasetbuilder
+import mddatasetbuilder.qmcalc
+import mddatasetbuilder.deepmd
 
 
 this_directory = os.getcwd()
