@@ -45,7 +45,7 @@ qmcalc -d dataset_ch4_GJf/001
 Next, prepare a DeePMD dataset and use [DeePMD-kit](https://github.com/deepmodeling/deepmd-kit) to train a NN model.
 
 ```bash
-preparedeepmd -p dataset_ch4_GJf -a C H O
+preparedeepmd -p dataset_ch4_GJf
 cd train && dp train train.json
 ```
 
