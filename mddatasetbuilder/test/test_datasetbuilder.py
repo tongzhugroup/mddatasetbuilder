@@ -53,7 +53,7 @@ class TestMDDatasetBuilder:
     def test_datasetbuilder(self, datasetbuilder):
         datasetbuilder.builddataset()
         assert os.path.exists(datasetbuilder.gjfdir)
-        mddatasetbuilder.qmcalc.qmcalc(datasetbuilder.gjfdir)
+        mddatasetbuilder.qmcalc.qmcalc(os.path.join(datasetbuilder.gjfdir, "000"))
         mddatasetbuilder.deepmd.PrepareDeePMD(datasetbuilder.gjfdir).preparedeepmd()
 
     def _download_file(self, urls, pathfilename, sha256):
