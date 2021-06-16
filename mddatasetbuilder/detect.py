@@ -181,7 +181,6 @@ class DetectDump(Detect):
         step_atoms: ase.Atoms
             The atoms of the frame.
         """
-        bond = [None]*self._N
         step_atoms, _ = self.readcrd(lines)
         bond = self._crd2bond(step_atoms, readlevel=False)
         molecules = connectmolecule(bond)
