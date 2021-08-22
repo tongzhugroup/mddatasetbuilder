@@ -1,0 +1,36 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+authors:
+- family-names: "Zeng"
+  given-names: "Jinzhe"
+  orcid: "https://orcid.org/0000-0002-1515-8172"
+title: "MDDatasetBuilder"
+version: 1.3.1
+date-released: 2021-03-29
+url: "https://github.com/tongzhugroup/mddatasetbuilder"
+preferred-citation:
+  type: article
+  authors:
+  - family-names: "Zeng"
+    given-names: "Jinzhe"
+    orcid: "https://orcid.org/0000-0002-1515-8172"
+  - family-names: "Cao"
+    given-names: "Liqun"
+    orcid: "https://orcid.org/0000-0003-2943-7057"
+  - family-names: "Xu"
+    given-names: "Mingyuan"
+  - family-names: "Zhu"
+    given-names: "Tong"
+    orcid: "https://orcid.org/0000-0001-7472-3736"
+  - family-names: "Zhang"
+    given-names: "John Z. H."
+    orcid: "https://orcid.org/0000-0003-4612-1863"
+  doi: "10.1038/s41467-020-19497-z"
+  journal: "Nature Communications"
+  month: 11
+  start: 5713 # First page number
+  end: 5713 # Last page number
+  title: "Complex reaction processes in combustion unraveled by neural network-based molecular dynamics simulation"
+  issue: 1
+  volume: 11
+  year: 2020
