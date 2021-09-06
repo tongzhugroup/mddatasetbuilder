@@ -393,7 +393,7 @@ class DatasetBuilder:
         """
         # currently only support charge=0
         # oxygen -> 3
-        if np.count_nonzero(symbols == ["O"]) == 2 and symbols.size == 2:
+        if symbols == ["O", "O"]:
             return 3
         # calculates the total number of electrons, assumes they are paired as much as possible
         n_total = sum([atomic_numbers[s] for s in symbols])
