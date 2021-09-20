@@ -109,7 +109,6 @@ class PrepareDeePMD:
                 "numb_test":        1,
                 "save_freq":        1000,
                 "save_ckpt":        "./model.ckpt",
-                "load_ckpt":        "./model.ckpt",
                 "disp_training":    True,
                 "time_training":    True
             }
