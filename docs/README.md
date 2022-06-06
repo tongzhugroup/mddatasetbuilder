@@ -53,10 +53,15 @@ cd train && dp train train.json
 The runtime of the software depends on the amount of data. It is more suited to running on a server rather than desktop computer.
 
 ### DP-GEN
-The MDDatasetBuilder package has been integrated with [DP-GEN](https://github.com/deepmodeling/dpgen) software:
+[![DOI:10.1021/acs.energyfuels.0c03211](https://img.shields.io/badge/DOI-10.1021%2Facs.energyfuels.0c03211-blue)](https://doi.org/10.1021/acs.energyfuels.0c03211)
+[![Citations](https://citations.njzjz.win/10.1021/acs.energyfuels.0c03211)](https://doi.org/10.1021/acs.energyfuels.0c03211)
+
+In a [follow-up work](10.1021/acs.energyfuels.0c03211), the MDDatasetBuilder package has been integrated with [DP-GEN](https://github.com/deepmodeling/dpgen) software as a part of the DP-GEN workflow:
 ```bash
 dpgen init_reaction reaction.json machine.json
 ```
 where an example of `reaction.json` can be found [here](https://github.com/deepmodeling/dpgen/blob/v0.9.1/examples/init/reaction.json), and `machine.json` should include the following keys:
 `reaxff_command`, `reaxff_resources`, `reaxff_machine`, `build_command`, `build_resources`, `build_machine`, `fp_command`, `fp_resources`, `fp_machine`, and `fp_group_size`.
 `reaxff_command` is the LAMMPS command, `build_command` is the MDDatasetbuilder command, and `fp_command` is the Gaussian 16 command.
+
+The genereated data can be used to continue DP-GEN concurrent learning workflow. Read [Energy & Fuels, 2021, 35 (1), 762–769](https://doi.org/10.1021/acs.energyfuels.0c03211) for details.
