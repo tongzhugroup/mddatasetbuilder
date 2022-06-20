@@ -560,7 +560,7 @@ def _commandline():
         default=10000)
     parser.add_argument(
         '-k', '--qmkeywords',
-        help='Gaussian QM keywords. Note that it shloud include "force" keyword to compute forces.',
+        help='Gaussian QM keywords. Note that it should include "force" keyword to compute forces.',
         default="force mn15/6-31g**")
     parser.add_argument(
         '--nprocjob',
