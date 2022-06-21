@@ -89,7 +89,7 @@ class DatasetBuilder:
             clusteratom=None, bondfilename=None,
             dumpfilename="dump.reaxc", dataset_name="md", cutoff=5.,
             stepinterval=1, n_clusters=10000, n_each=1,
-            qmkeywords="%nproc=4\n#force mn15/6-31g(d,p)", nproc=None, pbc=True,
+            qmkeywords="%nproc=4\n#force mn15/6-31g(d,p) Geom=PrintInputOrient", nproc=None, pbc=True,
             fragment=False, errorfilename=None, errorlimit=0., atom_pref=False):
         """Init the builder."""
         print(__doc__)
@@ -560,8 +560,8 @@ def _commandline():
         default=10000)
     parser.add_argument(
         '-k', '--qmkeywords',
-        help='Gaussian QM keywords. Note that it should include "force" keyword to compute forces.',
-        default="force mn15/6-31g**")
+        help='Gaussian QM keywords. Note that it should include "force" keyword to compute forces. Add "Geom=PrintInputOrient" if the number of atoms will be more than 50.',
+        default="force mn15/6-31g** Geom=PrintInputOrient")
     parser.add_argument(
         '--nprocjob',
         help='CPU number that each Gaussian job uses.',
