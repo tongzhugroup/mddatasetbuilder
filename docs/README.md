@@ -60,7 +60,7 @@ In a [follow-up work](10.1021/acs.energyfuels.0c03211), the MDDatasetBuilder pac
 ```bash
 dpgen init_reaction reaction.json machine.json
 ```
-where an example of `reaction.json` can be found [here](https://github.com/deepmodeling/dpgen/blob/v0.9.1/examples/init/reaction.json). `machine.json` is described [here](https://docs.deepmodeling.com/projects/dpgen/en/devel/init/init-reaction-mdata.html), where
-`reaxff_command` is the LAMMPS command (`lmp`), `build_command` is the MDDatasetbuilder command (`datasetbuilder`), and `fp_command` is the Gaussian 16 command (`g16 < input`).
+See [DP-GEN documentation](https://docs.deepmodeling.com/projects/dpgen/en/devel/init/init-reaction.html) for details. Arguments of `reaction.json` can be found [here](https://docs.deepmodeling.com/projects/dpgen/en/devel/init/init-reaction-jdata.html). `machine.json` is described [here](https://docs.deepmodeling.com/projects/dpgen/en/devel/init/init-reaction-mdata.html), where
+`reaxff_command` is the LAMMPS command (`lmp`), `build_command` is the MDDatasetbuilder command (`datasetbuilder`), and `fp_command` is the Gaussian 16 command (`g16 < input || :`).
 
 The genereated data can be used to continue DP-GEN concurrent learning workflow. Read [Energy & Fuels, 2021, 35 (1), 762–769](https://doi.org/10.1021/acs.energyfuels.0c03211) for details.
