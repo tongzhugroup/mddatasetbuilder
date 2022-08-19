@@ -56,7 +56,7 @@ The runtime of the software depends on the amount of data. It is more suited to 
 [![DOI:10.1021/acs.energyfuels.0c03211](https://img.shields.io/badge/DOI-10.1021%2Facs.energyfuels.0c03211-blue)](https://doi.org/10.1021/acs.energyfuels.0c03211)
 [![Citations](https://citations.njzjz.win/10.1021/acs.energyfuels.0c03211)](https://doi.org/10.1021/acs.energyfuels.0c03211)
 
-In a [follow-up work](10.1021/acs.energyfuels.0c03211), the MDDatasetBuilder package has been integrated with [DP-GEN](https://github.com/deepmodeling/dpgen) software as a part of the DP-GEN workflow:
+In a [follow-up work](https://doi.org/10.1021/acs.energyfuels.0c03211), the MDDatasetBuilder package has been integrated with [DP-GEN](https://github.com/deepmodeling/dpgen) software as a part of the DP-GEN workflow:
 ```bash
 dpgen init_reaction reaction.json machine.json
 ```
