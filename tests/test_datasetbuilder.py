@@ -7,8 +7,8 @@ import math
 import os
 import hashlib
 import tempfile
+from pathlib import Path
 
-import pkg_resources
 import requests
 import pytest
 from tqdm import tqdm
@@ -19,7 +19,7 @@ import mddatasetbuilder.deepmd
 
 
 this_directory = os.getcwd()
-with open(os.path.join(__file__, '..', 'test.json')) as f:
+with open(Path(__file__).parent / 'test.json') as f:
     test_params = json.load(f)
 
 class TestMDDatasetBuilder:
