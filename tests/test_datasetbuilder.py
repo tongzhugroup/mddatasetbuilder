@@ -1,7 +1,4 @@
-"""Test.
-
-python setup.py pytest
-"""
+"""Test."""
 
 
 import json
@@ -22,13 +19,13 @@ import mddatasetbuilder.deepmd
 
 
 this_directory = os.getcwd()
-
+with open(os.path.join(__file__, '..', 'test.json')) as f:
+    test_params = json.load(f)
 
 class TestMDDatasetBuilder:
     """Test MDDatasetBuilder."""
 
-    @pytest.fixture(params=json.load(
-        os.path.join(__file__, '..', 'test.json')))
+    @pytest.fixture(params=test_params)
     def datasetbuilder(self, request):
         """Test DatasetBuilder."""
         folder = tempfile.mkdtemp(prefix='testfiles-', dir=this_directory)
