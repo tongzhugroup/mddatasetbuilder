@@ -36,7 +36,7 @@ dependencies = [
     'openbabel-wheel',
 ]
 requires-python = ">=3.6"
-readme = "README.md"
+readme = "docs/README.md"
 keywords = ["dataset", "molecular dynamics"]
 
 [project.urls]
