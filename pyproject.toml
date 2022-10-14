@@ -61,7 +61,4 @@ test = [
 [tool.setuptools.packages.find]
 include = ["mddatasetbuilder*"]
 
-[tool.setuptools.package-data]
-dpdata = ['test/test.json']
-
 [tool.setuptools_scm]
