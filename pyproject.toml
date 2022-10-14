@@ -53,7 +53,7 @@ preparedeepmd = "mddatasetbuilder.deepmd:_commandline"
 test = [
     'requests',
     'pytest-sugar',
-    'pytest-cov',
+    'pytest-cov<4',
     'cython',
     'fakegaussian>=0.0.3',
 ]
