@@ -10,7 +10,6 @@ except ImportError:
     import openbabel
 import numpy as np
 from ase import Atom, Atoms
-from scipy.spatial import cKDTree
 from .dps import dps as connectmolecule
 
 
