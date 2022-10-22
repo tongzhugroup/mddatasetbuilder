@@ -4,10 +4,7 @@ from abc import ABCMeta, abstractmethod
 from enum import Enum, auto
 from collections import defaultdict
 
-try:
-    from openbabel import openbabel
-except ImportError:
-    import openbabel
+from openbabel import openbabel
 import numpy as np
 from ase import Atom, Atoms
 from .dps import dps as connectmolecule
