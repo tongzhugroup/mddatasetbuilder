@@ -192,16 +192,6 @@ class DetectDump(Detect):
         # copy from reacnetgenerator on 2019/4/13
         # updated on 2019/10/11
         atomnumber = len(step_atoms)
-        if step_atoms.pbc.any():
-            # Apply period boundry conditions
-            # add ghost atoms
-            repeated_atoms = step_atoms.repeat(2)[atomnumber:]
-            tree = cKDTree(step_atoms.get_positions())
-            d = tree.query(repeated_atoms.get_positions(), k=1)[0]
-            nearest = d < 5
-            ghost_atoms = repeated_atoms[nearest]
-            realnumber = np.where(nearest)[0] % atomnumber
-            step_atoms += ghost_atoms
         # Use openbabel to connect atoms
         mol = openbabel.OBMol()
         mol.BeginModify()
@@ -209,6 +199,18 @@ class DetectDump(Detect):
             a = mol.NewAtom(idx)
             a.SetAtomicNum(int(num))
             a.SetVector(*position)
+        # Apply period boundry conditions
+        # openbabel#1853, supported in v3.1.0
+        if step_atoms.pbc.any():
+            cell = step_atoms.cell
+            uc = openbabel.OBUnitCell()
+            uc.SetData(
+                openbabel.vector3(cell[0][0], cell[0][1], cell[0][2]),
+                openbabel.vector3(cell[1][0], cell[1][1], cell[1][2]),
+                openbabel.vector3(cell[2][0], cell[2][1], cell[2][2]),
+            )
+            mol.CloneData(uc)
+            mol.SetPeriodicMol()
         mol.ConnectTheDots()
         if not readlevel:
             bond = [[] for i in range(atomnumber)]
@@ -219,13 +221,6 @@ class DetectDump(Detect):
         for b in openbabel.OBMolBondIter(mol):
             s1 = b.GetBeginAtom().GetId()
             s2 = b.GetEndAtom().GetId()
-            if s1 >= atomnumber and s2 >= atomnumber:
-                # duplicated
-                continue
-            elif s1 >= atomnumber:
-                s1 = realnumber[s1-atomnumber]
-            elif s2 >= atomnumber:
-                s2 = realnumber[s2-atomnumber]
             if not readlevel:
                 bond[s1].append(s2)
                 bond[s2].append(s1)
@@ -238,7 +233,8 @@ class DetectDump(Detect):
     def readcrd(self, item):
         """Only this function can read coordinates."""
         lines = item
-        boxsize = []
+        # box information
+        ss = []
         step_atoms = []
         ids = []
         for line in lines:
@@ -254,7 +250,24 @@ class DetectDump(Detect):
                             (float(s[self.xidx]), float(s[self.yidx]), float(s[self.zidx]))))
                     elif linecontent == self.LineType.BOX:
                         s = line.split()
-                        boxsize.append(float(s[1])-float(s[0]))
+                        ss.append(list(map(float, s)))
+        # box information to 3x3 cell
+        ss = np.array(ss)
+        if ss.shape[1] > 2:
+            xy = ss[0][2]
+            xz = ss[1][2]
+            yz = ss[2][2]
+        else:
+            xy, xz, yz = 0., 0., 0.
+        xlo = ss[0][0] - min(0., xy, xz, xy+xz)
+        xhi = ss[0][1] - max(0., xy, xz, xy+xz)
+        ylo = ss[1][0] - min(0., yz)
+        yhi = ss[1][1] - max(0., yz)
+        zlo = ss[2][0]
+        zhi = ss[2][1]
+        boxsize = np.array([[xhi-xlo, 0., 0.],
+                            [xy, yhi-ylo, 0.],
+                            [xz, yz, zhi-zlo]])
         # sort by ID
         step_atoms = [x for (y, x) in sorted(zip(ids, step_atoms))]
         step_atoms = Atoms(step_atoms, cell=boxsize, pbc=self.pbc)
