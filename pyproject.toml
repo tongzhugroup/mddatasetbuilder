@@ -33,7 +33,7 @@ dependencies = [
     'pybase64',
     'lz4',
     'dpdata>=0.1.2',
-    'openbabel-wheel',
+    'openbabel-wheel>=3.1.0.0',
 ]
 requires-python = ">=3.6"
 readme = "docs/README.md"
