@@ -139,7 +139,7 @@ class DetectDump(Detect):
                         atomtype = np.zeros(N, dtype=int)
                     elif linecontent == self.LineType.ATOMS:
                         s = line.split()
-                        atomtype[int(s[0])-1] = int(s[1])
+                        atomtype[int(s[self.id_idx])-1] = int(s[self.tidx])
         steplinenum = stepbindex-stepaindex
         self._N = N
         self.atomtype = atomtype
