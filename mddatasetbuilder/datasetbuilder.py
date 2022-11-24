@@ -32,7 +32,14 @@ from sklearn import preprocessing
 from sklearn.cluster import MiniBatchKMeans
 
 from .detect import Detect
-from .utils import run_mp, bytestolist, listtobytes, must_be_list, _mkdir
+from .utils import (
+    run_mp,
+    bytestolist,
+    listtobytes,
+    read_compressed_block,
+    must_be_list,
+    _mkdir,
+)
 
 try:
     __version__ = get_distribution(__name__).version
@@ -190,7 +197,7 @@ class DatasetBuilder:
         """
         self.dstep = {}
         with open(os.path.join(self.trajatom_dir, f"stepatom.{trajatomfilename}"), 'rb') as f:
-            for line in f:
+            for line in read_compressed_block(f):
                 s = bytestolist(line)
                 self.dstep[s[0]] = s[1]
         n_atoms = sum(map(len, self.dstep.values()))
@@ -346,7 +353,7 @@ class DatasetBuilder:
         self.dstep = defaultdict(list)
         with open(os.path.join(self.trajatom_dir, "chooseatoms"), 'rb') as fc:
             typecounter = Counter()
-            for typefile, trajatomfilename in zip(fc, self.atombondtype):
+            for typefile, trajatomfilename in zip(read_compressed_block(fc), self.atombondtype):
                 for step, atoma in bytestolist(typefile):
                     self.dstep[step].append(
                         (atoma, trajatomfilename,

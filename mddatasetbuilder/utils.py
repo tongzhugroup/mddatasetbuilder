@@ -3,6 +3,7 @@ import os
 import logging
 import itertools
 import pickle
+from typing import BinaryIO, Union
 
 from tqdm import tqdm
 import lz4.frame
@@ -37,21 +38,71 @@ def produce(semaphore, plist, parameter):
         yield item
 
 
-def compress(x, isbytes=False):
+def compress(x: Union[str, bytes]) -> bytes:
     """Compress the line.
 
-    This function reduces IO overhead to speed up the program.
+    This function reduces IO overhead to speed up the program. The functions will
+    use lz4 to compress, since lz4 has better performance that any others.
+    The compressed format is size + data + size + data + ..., where size is a 64-bit
+    little-endian integer.
+
+    Parameters
+    ----------
+    x: str or bytes
+        The line to compress.
+
+    Returns
+    -------
+    bytes
+        The compressed line, with a linebreak in the end.
     """
-    if isbytes:
-        return pybase64.b64encode(lz4.frame.compress(x, compression_level=0))+b'\n'
-    return pybase64.b64encode(lz4.frame.compress(x.encode(), compression_level=-1))+b'\n'
+    if isinstance(x, str):
+        x = x.encode()
+    compress_block = lz4.frame.compress(x, compression_level=0)
+    length_bytes = len(compress_block).to_bytes(64, byteorder='little')
+    return length_bytes + compress_block
 
 
-def decompress(x, isbytes=False):
-    """Decompress the line."""
+def decompress(x: bytes, isbytes: bool = False) -> Union[str, bytes]:
+    """Decompress the line.
+    
+    Parameters
+    ----------
+    x: bytes
+        The line to decompress.
+    isbytes: bool, optional, default: False
+        If the decompressed content is bytes. If not, the line will be decoded.
+    
+    Returns
+    -------
+    str or bytes
+        The decompressed line.
+    """
+    x = lz4.frame.decompress(x[64:])
     if isbytes:
-        return lz4.frame.decompress(pybase64.b64decode(x.strip(), validate=True))
-    return lz4.frame.decompress(pybase64.b64decode(x.strip(), validate=True)).decode()
+        return x
+    return x.decode()
+
+
+def read_compressed_block(f: BinaryIO):
+    """Read compressed binary file, assuming the format is size + data + size + data + ...
+    
+    Parameters
+    ----------
+    f: fileObject
+        The file object to read.
+
+    Yields
+    ------
+    data: bytes
+        The compressed block.
+    """
+    while True:
+        sizeb = f.read(64)
+        if not sizeb:
+            break
+        size = int.from_bytes(sizeb, byteorder='little')
+        yield sizeb + f.read(size)
 
 
 def listtobytes(x):
