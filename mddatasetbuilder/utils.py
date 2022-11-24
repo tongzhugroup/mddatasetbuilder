@@ -7,7 +7,6 @@ from typing import BinaryIO, Union
 
 from tqdm import tqdm
 import lz4.frame
-import pybase64
 
 
 def multiopen(pool, func, l, semaphore=None, nlines=None, unordered=True, return_num=False, start=0, extra=None, interval=None, bar=True, desc=None, unit="it", total=None):
