@@ -105,7 +105,7 @@ def read_compressed_block(f: BinaryIO):
 
 
 def listtobytes(x):
-    return compress(pickle.dumps(x), isbytes=True)
+    return compress(pickle.dumps(x))
 
 
 def bytestolist(x):
