@@ -28,7 +28,7 @@ dependencies = [
     'scikit-learn',
     'ase',
     'gaussianrunner>=1.0.20',
-    'tqdm',
+    'tqdm>=4.9.0',
     'coloredlogs',
     'lz4',
     'dpdata>=0.1.2',
