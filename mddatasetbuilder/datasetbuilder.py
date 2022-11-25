@@ -16,7 +16,6 @@ __date__ = '2018-07-18'
 import argparse
 import gc
 import itertools
-import logging
 import os
 import tempfile
 import time
@@ -31,6 +30,7 @@ from pkg_resources import DistributionNotFound, get_distribution
 from sklearn import preprocessing
 from sklearn.cluster import MiniBatchKMeans
 
+from ._logger import logger
 from .detect import Detect
 from .utils import (
     run_mp,
@@ -156,7 +156,7 @@ class DatasetBuilder:
                     self._writexyzfiles()
                 gc.collect()
                 timearray.append(time.time())
-                logging.info(
+                logger.info(
                     f"Step {len(timearray)-1} Done! Time consumed (s): {timearray[-1]-timearray[-2]:.3f}")
 
     def _readtimestepsbond(self):
@@ -227,7 +227,7 @@ class DatasetBuilder:
                         lambda x:vector_elements[x[0]][: x[1]], symbols_counter.items()), [])]=vector
                     max_counter |= symbols_counter
                     j += 1
-            logging.info(
+            logger.info(
                 f"Max counter of {trajatomfilename} is {max_counter}")
             choosedindexs = self._clusterdatas(
                 np.sort(feedvector), n_clusters=self.n_clusters,

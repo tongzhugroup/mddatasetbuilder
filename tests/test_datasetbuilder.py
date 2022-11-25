@@ -2,7 +2,6 @@
 
 
 import json
-import logging
 import math
 import os
 import hashlib
@@ -16,6 +15,7 @@ from tqdm.auto import tqdm
 import mddatasetbuilder
 import mddatasetbuilder.qmcalc
 import mddatasetbuilder.deepmd
+from mddatasetbuilder._logger import logger
 
 
 this_directory = os.getcwd()
@@ -29,7 +29,7 @@ class TestMDDatasetBuilder:
     def datasetbuilder(self, request):
         """Test DatasetBuilder."""
         folder = tempfile.mkdtemp(prefix='testfiles-', dir=this_directory)
-        logging.info(f'Folder: {folder}:')
+        logger.info(f'Folder: {folder}:')
         os.chdir(folder)
         testparms = request.param
         # download bonds.reaxc and dump.reaxc
@@ -68,14 +68,14 @@ class TestMDDatasetBuilder:
                 urls = [urls]
             for url in urls:
                 try:
-                    logging.info(f"Try to download {pathfilename} from {url}")
+                    logger.info(f"Try to download {pathfilename} from {url}")
                     r = requests.get(url, stream=True)
                     break
                 except requests.exceptions.RequestException as e:
-                    logging.warning(e)
-                    logging.warning("Request Error.")
+                    logger.warning(e)
+                    logger.warning("Request Error.")
             else:
-                logging.error(f"Cannot download {pathfilename}.")
+                logger.error(f"Cannot download {pathfilename}.")
                 raise IOError(f"Cannot download {pathfilename}.")
 
             total_size = int(r.headers.get('content-length', 0))
@@ -91,7 +91,7 @@ class TestMDDatasetBuilder:
                     if chunk:
                         f.write(chunk)
         else:
-            logging.error(f"Retry too much times.")
+            logger.error(f"Retry too much times.")
             raise IOError(f"Retry too much times.")
         return pathfilename
 
@@ -106,8 +106,8 @@ class TestMDDatasetBuilder:
             for n in iter(lambda: f.readinto(mv), 0):
                 h.update(mv[:n])
         sha256 = h.hexdigest()
-        logging.info(f"SHA256 of {filename}: {sha256}")
+        logger.info(f"SHA256 of {filename}: {sha256}")
         if sha256 == sha256_check:
             return True
-        logging.warning("SHA256 is not correct.")
+        logger.warning("SHA256 is not correct.")
         return False
