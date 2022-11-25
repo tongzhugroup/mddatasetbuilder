@@ -60,17 +60,12 @@ class PrepareDeePMD:
 
     def _writejson(self, jsonfilename):
         jsonpath = os.path.dirname(jsonfilename)
-        try:
-            sel_a = [{"C": 40, "H": 80, "O": 40}.get(
-                symbol, 40) for symbol in self.atomname]
-        except KeyError:
-            raise RuntimeError("Unsupported atom types.")
         deepmd_json = {
             "model": {
                 "type_map":     self.atomname,
                 "descriptor": {
                     "type":         "se_a",
-                    "sel":          sel_a,
+                    "sel":          "auto",
                     "rcut_smth":    1.,
                     "rcut":         6.,
                     "neuron":       [25, 50, 100],
@@ -102,7 +97,7 @@ class PrepareDeePMD:
                 "systems":          [os.path.relpath(path, jsonpath) for path in self.system_paths],
                 "set_prefix":       "set",
                 "stop_batch":       4000000,
-                "batch_size":       self.batch_size,
+                "batch_size":       "auto",
                 "seed":             random.randint(0, 2**32),
                 "disp_file":        "lcurve.out",
                 "disp_freq":        1000,
