@@ -61,7 +61,7 @@ test = [
 include = ["mddatasetbuilder*"]
 
 [tool.setuptools_scm]
-write_to = "reacnetgenerator/_version.py"
+write_to = "mddatasetbuilder/_version.py"
 fallback_version = "Unknown"
 
 [tool.cibuildwheel]
