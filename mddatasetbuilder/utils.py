@@ -5,7 +5,7 @@ import itertools
 import pickle
 from typing import BinaryIO, Union
 
-from tqdm import tqdm
+from tqdm.auto import tqdm
 import lz4.frame
 
 
@@ -24,7 +24,7 @@ def multiopen(pool, func, l, semaphore=None, nlines=None, unordered=True, return
     else:
         obj = pool.imap(func, obj, 100)
     if bar:
-        obj = tqdm(obj, desc=desc, unit=unit, total=total)
+        obj = tqdm(obj, desc=desc, unit=unit, total=total, disable=None)
     return obj
 
 

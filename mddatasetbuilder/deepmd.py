@@ -6,7 +6,7 @@ import os
 import random
 from multiprocessing import Pool
 
-from tqdm import tqdm
+from tqdm.auto import tqdm
 import dpdata
 import numpy as np
 
@@ -36,13 +36,13 @@ class PrepareDeePMD:
 
     def _searchpath(self):
         logfiles = []
-        for root, _, files in tqdm(os.walk(self.data_path, followlinks=True)):
+        for root, _, files in tqdm(os.walk(self.data_path, followlinks=True), disable=None):
             for logfile in files:
                 if logfile.endswith(self.suffix):
                     logfiles.append(os.path.join(root, logfile))
         multi_systems = dpdata.MultiSystems()
         with Pool() as pool:
-            for system in pool.imap_unordered(self._preparedeepmdforLOG, tqdm(logfiles)):
+            for system in pool.imap_unordered(self._preparedeepmdforLOG, tqdm(logfiles, disable=None)):
                 multi_systems.append(system)
         multi_systems.to_deepmd_npy(self.deepmd_dir)
         for formula, system in multi_systems.systems.items():

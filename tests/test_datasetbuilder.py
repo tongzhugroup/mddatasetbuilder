@@ -11,7 +11,7 @@ from pathlib import Path
 
 import requests
 import pytest
-from tqdm import tqdm
+from tqdm.auto import tqdm
 
 import mddatasetbuilder
 import mddatasetbuilder.qmcalc
@@ -85,7 +85,9 @@ class TestMDDatasetBuilder:
                         r.iter_content(chunk_size=1024),
                         total=math.ceil(total_size // block_size),
                         unit='KB', unit_scale=True,
-                        desc=f"Downloading {pathfilename}..."):
+                        desc=f"Downloading {pathfilename}...",
+                        disable=None,
+                        ):
                     if chunk:
                         f.write(chunk)
         else:
