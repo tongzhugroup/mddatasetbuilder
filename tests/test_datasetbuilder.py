@@ -61,7 +61,7 @@ class TestMDDatasetBuilder:
             if os.path.isfile(pathfilename) and self._checksha256(
                     pathfilename, sha256):
                 break
-            os.makedirs(os.path.split(pathfilename)[0], exist_ok=True)
+            Path(pathfilename).resolve().parent.mkdir(parent=True, exist_ok=True)
 
             # from https://stackoverflow.com/questions/16694907
             if not isinstance(urls, list):
