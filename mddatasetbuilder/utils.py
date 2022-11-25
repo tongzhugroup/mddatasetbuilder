@@ -1,12 +1,13 @@
 from multiprocessing import Pool, Semaphore
 import os
-import logging
 import itertools
 import pickle
 from typing import BinaryIO, Union
 
 from tqdm.auto import tqdm
 import lz4.frame
+
+from ._logger import logger
 
 
 def multiopen(pool, func, l, semaphore=None, nlines=None, unordered=True, return_num=False, start=0, extra=None, interval=None, bar=True, desc=None, unit="it", total=None):
@@ -121,7 +122,7 @@ def run_mp(nproc, **arg):
             yield item
             semaphore.release()
     except:
-        logging.exception("run_mp failed")
+        logger.exception("run_mp failed")
         pool.terminate()
         raise
     else:
