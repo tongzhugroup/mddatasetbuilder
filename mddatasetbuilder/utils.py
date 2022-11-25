@@ -134,10 +134,3 @@ def must_be_list(obj):
     if isinstance(obj, list):
         return obj
     return [obj]
-
-
-def _mkdir(path):
-    try:
-        os.makedirs(path)
-    except OSError:
-        pass

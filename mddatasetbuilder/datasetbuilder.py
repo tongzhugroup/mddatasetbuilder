@@ -38,7 +38,6 @@ from .utils import (
     listtobytes,
     read_compressed_block,
     must_be_list,
-    _mkdir,
 )
 
 try:
@@ -151,9 +150,9 @@ class DatasetBuilder:
                             self._writecoulumbmatrix(bondtype, f)
                             gc.collect()
                 elif runstep == 2:
-                    _mkdir(self.dataset_dir)
+                    os.makedirs(self.dataset_dir, exist_ok=True)
                     if self.writegjf:
-                        _mkdir(self.gjfdir)
+                        os.makedirs(self.gjfdir, exist_ok=True)
                     self._writexyzfiles()
                 gc.collect()
                 timearray.append(time.time())
@@ -164,7 +163,7 @@ class DatasetBuilder:
         """Read and store the bond of each atom in each frame."""
         # added on 2018-12-15
         stepatomfiles = {}
-        _mkdir(self.trajatom_dir)
+        os.makedirs(self.trajatom_dir, exist_ok=True)
         results = run_mp(self.nproc, func=self.bonddetector.readatombondtype,
                          l=zip(self.lineiter(self.bonddetector), self.erroriter(
                          )) if self.errorfilename is not None else self.lineiter(self.bonddetector),
@@ -367,10 +366,10 @@ class DatasetBuilder:
             foldernames = list(map(lambda i: str(i).zfill(
                 self.foldermaxlength), range(foldernum)))
             for folder in foldernames:
-                _mkdir(os.path.join(self.dataset_dir, folder))
+                os.makedirs(os.path.join(self.dataset_dir, folder), exist_ok=True)
             if self.writegjf:
                 for folder in foldernames:
-                    _mkdir(os.path.join(self.gjfdir, folder))
+                    os.makedirs(os.path.join(self.gjfdir, folder), exist_ok=True)
             crditer = self.lineiter(self.crddetector)
             if self.crddetector is self.bonddetector:
                 lineiter = crditer

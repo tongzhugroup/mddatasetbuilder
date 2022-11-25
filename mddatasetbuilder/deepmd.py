@@ -108,8 +108,7 @@ class PrepareDeePMD:
                 "time_training":    True
             }
         }
-        if not os.path.exists(jsonpath):
-            os.makedirs(jsonpath)
+        os.makedirs(jsonpath, exist_ok=True)
         with open(jsonfilename, 'w') as f:
             json.dump(deepmd_json, f)
 
