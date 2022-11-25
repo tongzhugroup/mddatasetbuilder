@@ -106,3 +106,5 @@ ENV/
 # test
 testfiles*/
 dps.cpp
+
+_version.py

@@ -26,7 +26,6 @@ from multiprocessing import cpu_count
 import numpy as np
 from ase.data import atomic_numbers
 from ase.io import write as write_xyz
-from pkg_resources import DistributionNotFound, get_distribution
 from sklearn import preprocessing
 from sklearn.cluster import MiniBatchKMeans
 
@@ -40,11 +39,7 @@ from .utils import (
     must_be_list,
 )
 
-try:
-    __version__ = get_distribution(__name__).version
-except DistributionNotFound:
-    # package is not installed
-    __version__ = ''
+from ._version import version as __version__
 
 
 class DatasetBuilder:
