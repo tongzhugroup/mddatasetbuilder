@@ -2,7 +2,7 @@
 requires = [
     "setuptools>=61",
     "setuptools_scm[toml]>=6.2",
-    "cython @ https://github.com/cython/cython/archive/69689cdf1a9348d92c4c440437ccee5d5dbb291d.zip",
+    "cython",
     "wheel",
 ]
 build-backend = "setuptools.build_meta"
