@@ -85,4 +85,4 @@ repair-wheel-command = [
 ]
 
 [tool.cibuildwheel.windows]
-repair-wheel-command = "pipx run abi3audit --strict --report {wheel}"
+repair-wheel-command = "pipx --python python3.11 run abi3audit --strict --report {wheel}"
