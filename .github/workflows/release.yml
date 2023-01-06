@@ -67,7 +67,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - name: Build wheels
-        uses: pypa/cibuldwheel@2.11.4
+        uses: pypa/cibuldwheel@v2.11.4
         env:
           CIBW_ARCHS: all
           CIBW_BUILD: cp${{ matrix.python }}-${{ matrix.platform_id }}
