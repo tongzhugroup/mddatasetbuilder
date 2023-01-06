@@ -72,3 +72,8 @@ test-skip = "*-win_amd64 cp311-*"
 
 [tool.cibuildwheel.linux]
 environment-pass = ["CIBW_BUILD"]
+# Use abi3audit to catch issues with Limited API wheels
+repair-wheel-command = [
+  "auditwheel repair -w {dest_dir} {wheel}",
+  "pipx run abi3audit --strict --report {wheel}",
+]
