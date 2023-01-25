@@ -10,7 +10,22 @@ import lz4.frame
 from ._logger import logger
 
 
-def multiopen(pool, func, l, semaphore=None, nlines=None, unordered=True, return_num=False, start=0, extra=None, interval=None, bar=True, desc=None, unit="it", total=None):
+def multiopen(
+    pool,
+    func,
+    l,
+    semaphore=None,
+    nlines=None,
+    unordered=True,
+    return_num=False,
+    start=0,
+    extra=None,
+    interval=None,
+    bar=True,
+    desc=None,
+    unit="it",
+    total=None,
+):
     obj = l
     if nlines:
         obj = itertools.zip_longest(*[obj] * nlines)
@@ -59,20 +74,20 @@ def compress(x: Union[str, bytes]) -> bytes:
     if isinstance(x, str):
         x = x.encode()
     compress_block = lz4.frame.compress(x, compression_level=0)
-    length_bytes = len(compress_block).to_bytes(64, byteorder='little')
+    length_bytes = len(compress_block).to_bytes(64, byteorder="little")
     return length_bytes + compress_block
 
 
 def decompress(x: bytes, isbytes: bool = False) -> Union[str, bytes]:
     """Decompress the line.
-    
+
     Parameters
     ----------
     x: bytes
         The line to decompress.
     isbytes: bool, optional, default: False
         If the decompressed content is bytes. If not, the line will be decoded.
-    
+
     Returns
     -------
     str or bytes
@@ -86,7 +101,7 @@ def decompress(x: bytes, isbytes: bool = False) -> Union[str, bytes]:
 
 def read_compressed_block(f: BinaryIO):
     """Read compressed binary file, assuming the format is size + data + size + data + ...
-    
+
     Parameters
     ----------
     f: fileObject
@@ -101,7 +116,7 @@ def read_compressed_block(f: BinaryIO):
         sizeb = f.read(64)
         if not sizeb:
             break
-        size = int.from_bytes(sizeb, byteorder='little')
+        size = int.from_bytes(sizeb, byteorder="little")
         yield sizeb + f.read(size)
 
 
@@ -115,7 +130,7 @@ def bytestolist(x):
 
 def run_mp(nproc, **arg):
     pool = Pool(nproc, maxtasksperchild=1000)
-    semaphore = Semaphore(nproc*150)
+    semaphore = Semaphore(nproc * 150)
     try:
         results = multiopen(pool=pool, semaphore=semaphore, **arg)
         for item in results:

@@ -5,11 +5,12 @@
 """Connect molecule with Depth-First Search."""
 from libc.stdlib cimport malloc, free
 
-cdef extern from 'c_stack.h':
+cdef extern from "c_stack.h":
     # This function is copied from https://zhuanlan.zhihu.com/p/38212302
     cdef cppclass C_Stack:
-        void push(int val);
-        int pop();
+        void push(int val)
+        int pop()
+
 
 def dps(bonds):
     molecule = []

@@ -23,7 +23,7 @@ MDDatasetBuilder can be installed with pip:
 pip install mddatasetbuilder
 ```
 
-The installation process should be very quick, taking only a few minutes on a “normal” desktop computer. 
+The installation process should be very quick, taking only a few minutes on a “normal” desktop computer.
 
 ## Usage
 ### Simple example

@@ -19,8 +19,9 @@ from mddatasetbuilder._logger import logger
 
 
 this_directory = os.getcwd()
-with open(Path(__file__).parent / 'test.json') as f:
+with open(Path(__file__).parent / "test.json") as f:
     test_params = json.load(f)
+
 
 class TestMDDatasetBuilder:
     """Test MDDatasetBuilder."""
@@ -28,24 +29,32 @@ class TestMDDatasetBuilder:
     @pytest.fixture(params=test_params)
     def datasetbuilder(self, request):
         """Test DatasetBuilder."""
-        folder = tempfile.mkdtemp(prefix='testfiles-', dir=this_directory)
-        logger.info(f'Folder: {folder}:')
+        folder = tempfile.mkdtemp(prefix="testfiles-", dir=this_directory)
+        logger.info(f"Folder: {folder}:")
         os.chdir(folder)
         testparms = request.param
         # download bonds.reaxc and dump.reaxc
-        for fileparms in ((testparms["bondfile"], testparms["dumpfile"]) if "bondfile" in testparms else (testparms["dumpfile"],)):
-            self._download_file(fileparms["url"],
-                                fileparms["filename"],
-                                fileparms["sha256"])
+        for fileparms in (
+            (testparms["bondfile"], testparms["dumpfile"])
+            if "bondfile" in testparms
+            else (testparms["dumpfile"],)
+        ):
+            self._download_file(
+                fileparms["url"], fileparms["filename"], fileparms["sha256"]
+            )
 
         return mddatasetbuilder.DatasetBuilder(
-            bondfilename=testparms["bondfile"]["filename"] if "bondfile" in testparms else None,
+            bondfilename=testparms["bondfile"]["filename"]
+            if "bondfile" in testparms
+            else None,
             dumpfilename=testparms["dumpfile"]["filename"],
             atomname=testparms["atomname"],
             n_clusters=testparms["size"],
             dataset_name=testparms["dataset_name"],
             stepinterval=testparms["stepinterval"]
-            if "stepinterval" in testparms else 1)
+            if "stepinterval" in testparms
+            else 1,
+        )
 
     def test_datasetbuilder(self, datasetbuilder):
         datasetbuilder.builddataset()
@@ -58,8 +67,7 @@ class TestMDDatasetBuilder:
         times = 0
         # download if not exists
         while times < 3:
-            if os.path.isfile(pathfilename) and self._checksha256(
-                    pathfilename, sha256):
+            if os.path.isfile(pathfilename) and self._checksha256(pathfilename, sha256):
                 break
             Path(pathfilename).resolve().parent.mkdir(parents=True, exist_ok=True)
 
@@ -78,16 +86,17 @@ class TestMDDatasetBuilder:
                 logger.error(f"Cannot download {pathfilename}.")
                 raise IOError(f"Cannot download {pathfilename}.")
 
-            total_size = int(r.headers.get('content-length', 0))
+            total_size = int(r.headers.get("content-length", 0))
             block_size = 1024
-            with open(pathfilename, 'wb') as f:
+            with open(pathfilename, "wb") as f:
                 for chunk in tqdm(
-                        r.iter_content(chunk_size=1024),
-                        total=math.ceil(total_size // block_size),
-                        unit='KB', unit_scale=True,
-                        desc=f"Downloading {pathfilename}...",
-                        disable=None,
-                        ):
+                    r.iter_content(chunk_size=1024),
+                    total=math.ceil(total_size // block_size),
+                    unit="KB",
+                    unit_scale=True,
+                    desc=f"Downloading {pathfilename}...",
+                    disable=None,
+                ):
                     if chunk:
                         f.write(chunk)
         else:
@@ -100,9 +109,9 @@ class TestMDDatasetBuilder:
         if not os.path.isfile(filename):
             return
         h = hashlib.sha256()
-        b = bytearray(128*1024)
+        b = bytearray(128 * 1024)
         mv = memoryview(b)
-        with open(filename, 'rb', buffering=0) as f:
+        with open(filename, "rb", buffering=0) as f:
             for n in iter(lambda: f.readinto(mv), 0):
                 h.update(mv[:n])
         sha256 = h.hexdigest()
