@@ -26,7 +26,7 @@ repos:
     -   id: clang-format
 # Cython
 -   repo: https://github.com/MarcoGorelli/cython-lint
-    rev: v0.10.1
+    rev: v0.11.1
     hooks:
     -   id: cython-lint
     -   id: double-quote-cython-strings
