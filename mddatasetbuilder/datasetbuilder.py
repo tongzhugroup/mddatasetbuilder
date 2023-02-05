@@ -148,7 +148,7 @@ class DatasetBuilder:
 
         Parameters
         ----------
-        writegjf: bool, optional, default=True
+        writegjf : bool, optional, default=True
             Write gjf files.
         """
         self.writegjf = writegjf
@@ -211,9 +211,9 @@ class DatasetBuilder:
 
         Parameters
         ----------
-        trajatomfilename: str
+        trajatomfilename : str
             The name of the bond, for example, C1111.
-        fc: File object
+        fc : File object
             The File object for storing selected atoms.
         """
         self.dstep = {}
@@ -278,7 +278,7 @@ class DatasetBuilder:
 
         Parameters
         ----------
-        item: tuple (step, lines)
+        item : tuple (step, lines)
             step: int
                 The timestep of the frame.
             lines: list of strs
@@ -320,7 +320,7 @@ class DatasetBuilder:
 
         Parameters
         ----------
-        atoms: ase.Atoms
+        atoms : ase.Atoms
             Atoms to calculate Coulumb matrix.
 
         Returns
@@ -345,11 +345,11 @@ class DatasetBuilder:
 
         Parameters
         ----------
-        X: numpy.darray
+        X : numpy.darray
             The input data.
-        n_clusters: int
+        n_clusters : int
             The number of clusters.
-        n_each: int, optional, default=1
+        n_each : int, optional, default=1
             The number of structures in each cluster.
 
         Returns
@@ -439,7 +439,7 @@ class DatasetBuilder:
 
         Parameters
         ----------
-        symbols: numpy.ndarray
+        symbols : numpy.ndarray
             The atomic symbols.
 
         Returns
@@ -460,11 +460,11 @@ class DatasetBuilder:
 
         Parameters
         ----------
-        gjffilename: str
+        gjffilename : str
             The filename of GJF file.
-        takenatomidindex: list
+        takenatomidindex : list
             The index of taken atoms.
-        atoms_whole: ase.Atoms
+        atoms_whole : ase.Atoms
             The whole atoms in the frame.
         """
         buff = []
@@ -521,7 +521,7 @@ class DatasetBuilder:
 
         Parameters
         ----------
-        item: tuple (step, lines)
+        item : tuple (step, lines)
             step: int
                 The timestep of the frame.
             lines: list of strs or list of lists of strs

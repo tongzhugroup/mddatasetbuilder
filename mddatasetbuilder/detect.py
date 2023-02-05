@@ -99,7 +99,7 @@ class DetectBond(Detect):
 
         Parameters
         ----------
-        lines: list of strs
+        lines : list of strs
             Lines of LAMMPS bond files.
 
         Returns
@@ -177,7 +177,7 @@ class DetectDump(Detect):
 
         Parameters
         ----------
-        lines: list of strs
+        lines : list of strs
             Lines of LAMMPS bond files.
 
         Returns
