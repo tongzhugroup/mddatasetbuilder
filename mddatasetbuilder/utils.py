@@ -63,7 +63,7 @@ def compress(x: Union[str, bytes]) -> bytes:
 
     Parameters
     ----------
-    x : str or bytes
+    x: str or bytes
         The line to compress.
 
     Returns
@@ -83,9 +83,9 @@ def decompress(x: bytes, isbytes: bool = False) -> Union[str, bytes]:
 
     Parameters
     ----------
-    x : bytes
+    x: bytes
         The line to decompress.
-    isbytes : bool, optional, default: False
+    isbytes: bool, optional, default: False
         If the decompressed content is bytes. If not, the line will be decoded.
 
     Returns
@@ -104,7 +104,7 @@ def read_compressed_block(f: BinaryIO):
 
     Parameters
     ----------
-    f : fileObject
+    f: fileObject
         The file object to read.
 
     Yields
