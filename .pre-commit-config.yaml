@@ -16,7 +16,7 @@ repos:
     -   id: check-toml
 # Python
 -   repo: https://github.com/psf/black
-    rev: 22.12.0
+    rev: 23.1.0
     hooks:
     -   id: black-jupyter
 # numpydoc
@@ -32,7 +32,7 @@ repos:
     -   id: clang-format
 # Cython
 -   repo: https://github.com/MarcoGorelli/cython-lint
-    rev: v0.11.1
+    rev: v0.12.5
     hooks:
     -   id: cython-lint
     -   id: double-quote-cython-strings
