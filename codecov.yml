@@ -1,0 +1,10 @@
+ignore:
+  - "source/**/tests"
+coverage:
+  status:
+    project:
+      default:
+        threshold: 100%
+    patch:
+      default:
+        threshold: 100%
