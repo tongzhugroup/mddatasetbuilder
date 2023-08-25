@@ -113,9 +113,9 @@ class DetectBond(Detect):
             if line:
                 if not line.startswith("#"):
                     s = line.split()
-                    bond[int(s[0]) - 1] = list(map(
-                        lambda x: int(x) - 1, s[3 : 3 + int(s[2])]
-                    ))
+                    bond[int(s[0]) - 1] = list(
+                        map(lambda x: int(x) - 1, s[3 : 3 + int(s[2])])
+                    )
         molecules = connectmolecule(bond)
         return molecules
 
