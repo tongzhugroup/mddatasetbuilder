@@ -3,8 +3,8 @@
 
 import os
 
+from setuptools import Extension, setup
 from wheel.bdist_wheel import bdist_wheel
-from setuptools import setup, Extension
 
 
 class bdist_wheel_abi3(bdist_wheel):

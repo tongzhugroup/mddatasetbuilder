@@ -1,22 +1,21 @@
 """Test."""
 
 
+import hashlib
 import json
 import math
 import os
-import hashlib
 import tempfile
 from pathlib import Path
 
-import requests
 import pytest
+import requests
 from tqdm.auto import tqdm
 
 import mddatasetbuilder
-import mddatasetbuilder.qmcalc
 import mddatasetbuilder.deepmd
+import mddatasetbuilder.qmcalc
 from mddatasetbuilder._logger import logger
-
 
 this_directory = os.getcwd()
 with open(Path(__file__).parent / "test.json") as f:
@@ -84,7 +83,7 @@ class TestMDDatasetBuilder:
                     logger.warning("Request Error.")
             else:
                 logger.error(f"Cannot download {pathfilename}.")
-                raise IOError(f"Cannot download {pathfilename}.")
+                raise OSError(f"Cannot download {pathfilename}.")
 
             total_size = int(r.headers.get("content-length", 0))
             block_size = 1024
@@ -100,8 +99,8 @@ class TestMDDatasetBuilder:
                     if chunk:
                         f.write(chunk)
         else:
-            logger.error(f"Retry too much times.")
-            raise IOError(f"Retry too much times.")
+            logger.error("Retry too much times.")
+            raise OSError("Retry too much times.")
         return pathfilename
 
     @staticmethod

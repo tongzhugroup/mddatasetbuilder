@@ -1,11 +1,10 @@
-from multiprocessing import Pool, Semaphore
-import os
 import itertools
 import pickle
+from multiprocessing import Pool, Semaphore
 from typing import BinaryIO, Union
 
-from tqdm.auto import tqdm
 import lz4.frame
+from tqdm.auto import tqdm
 
 from ._logger import logger
 

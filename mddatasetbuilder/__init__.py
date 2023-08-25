@@ -1,6 +1,6 @@
 # Copyright 2018 East China Normal University
 """MDDatasetBuilder."""
 
-from .datasetbuilder import DatasetBuilder, __version__
+from .datasetbuilder import DatasetBuilder
 
 __all__ = ["DatasetBuilder"]
