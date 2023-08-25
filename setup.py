@@ -3,10 +3,23 @@
 
 import os
 
+from wheel.bdist_wheel import bdist_wheel
 from setuptools import setup, Extension
 
+
+class bdist_wheel_abi3(bdist_wheel):
+    def get_tag(self):
+        python, abi, plat = super().get_tag()
+
+        if python.startswith("cp"):
+            # on CPython, our wheels are abi3 and compatible back to 3.7
+            return "cp37", "abi3", plat
+
+        return python, abi, plat
+
+
 if __name__ == "__main__":
-    define_macros = []
+    define_macros = [("CYTHON_LIMITED_API", "1"), ("Py_LIMITED_API", "0x03070000")]
     if os.environ.get("DEBUG", 0):
         define_macros.extend((("CYTHON_TRACE", "1"), ("CYTHON_TRACE_NOGIL", "1")))
     setup(
@@ -18,4 +31,5 @@ if __name__ == "__main__":
                 define_macros=define_macros,
             ),
         ],
+        cmdclass={"bdist_wheel": bdist_wheel_abi3},
     )
