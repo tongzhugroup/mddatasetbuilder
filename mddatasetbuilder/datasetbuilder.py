@@ -41,7 +41,7 @@ from .utils import (
 
 
 class DatasetBuilder:
-    """Dataset Builder.
+    r"""Dataset Builder.
 
     Parameters
     ----------
@@ -595,6 +595,18 @@ class DatasetBuilder:
         return typestr
 
     def lineiter(self, detector):
+        """Iterate over file(s).
+        
+        Parameters
+        ----------
+        detector : mddatasetbuilder.detect.Detect
+            File detector
+        
+        Yields
+        ------
+        str
+            lines
+        """
         fns = must_be_list(detector.filename)
         for fn in fns:
             with open(fn) as f:
@@ -608,6 +620,13 @@ class DatasetBuilder:
                     yield line
 
     def erroriter(self):
+        """Iterate over the model deviation file.
+        
+        Yields
+        ------
+        str
+            the line of model deviation
+        """
         fns = must_be_list(self.errorfilename)
         for fn in fns:
             with open(fn) as f:

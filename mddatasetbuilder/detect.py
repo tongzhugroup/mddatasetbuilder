@@ -12,6 +12,7 @@ from .dps import dps as connectmolecule
 
 
 class Detect(metaclass=ABCMeta):
+    """Detect structures from file(s)."""
     def __init__(self, filename, atomname, pbc, errorlimit=None, errorfilename=None):
         self.filename = filename
         self.atomname = atomname
@@ -26,12 +27,12 @@ class Detect(metaclass=ABCMeta):
 
     @abstractmethod
     def readatombondtype(self, item):
-        """This function reads bond types of atoms such as C1111."""
+        """Read bond types of atoms such as C1111."""
         pass
 
     @abstractmethod
     def readmolecule(self, lines):
-        """This function reads molecules."""
+        """Read molecules."""
         pass
 
     @staticmethod
@@ -77,6 +78,20 @@ class DetectBond(Detect):
         return steplinenum
 
     def readatombondtype(self, item):
+        """Read bond orders of atoms.
+        
+        Parameters
+        ----------
+        item : tuple
+            (step, lines), _
+        
+        Returns
+        -------
+        dict
+            dict of bond orders
+        int
+            the step index
+        """
         # copy from reacnetgenerator on 2018-12-15
         (step, lines), _ = item
         d = defaultdict(list)
@@ -154,6 +169,20 @@ class DetectDump(Detect):
         return steplinenum
 
     def readatombondtype(self, item):
+        """Read bond orders of atoms.
+        
+        Parameters
+        ----------
+        item : tuple
+            (step, lines), _
+        
+        Returns
+        -------
+        dict
+            dict of bond orders
+        int
+            the step index
+        """
         (step, lines), needlerror = item
         if needlerror:
             trajline, errorline = lines
@@ -170,7 +199,7 @@ class DetectDump(Detect):
         return d, step
 
     def readmolecule(self, lines):
-        """Returns molecules from lines.
+        """Return molecules from lines.
 
         Parameters
         ----------

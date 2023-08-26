@@ -27,7 +27,7 @@ class TestMDDatasetBuilder:
 
     @pytest.fixture(params=test_params)
     def datasetbuilder(self, request):
-        """Test DatasetBuilder."""
+        """DatasetBuilder fixture."""
         folder = tempfile.mkdtemp(prefix="testfiles-", dir=this_directory)
         logger.info(f"Folder: {folder}:")
         os.chdir(folder)
@@ -56,6 +56,7 @@ class TestMDDatasetBuilder:
         )
 
     def test_datasetbuilder(self, datasetbuilder):
+        """Test DatasetBuilder."""
         datasetbuilder.builddataset()
         assert os.path.exists(datasetbuilder.gjfdir)
         for ii in os.listdir(datasetbuilder.gjfdir):
