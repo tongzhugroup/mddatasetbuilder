@@ -9,6 +9,7 @@ from wheel.bdist_wheel import bdist_wheel
 
 class bdist_wheel_abi3(bdist_wheel):
     """Build the distributed wheel for abi3."""
+
     def get_tag(self):
         """Get the wheel tag."""
         python, abi, plat = super().get_tag()

@@ -13,6 +13,7 @@ from .dps import dps as connectmolecule
 
 class Detect(metaclass=ABCMeta):
     """Detect structures from file(s)."""
+
     def __init__(self, filename, atomname, pbc, errorlimit=None, errorfilename=None):
         self.filename = filename
         self.atomname = atomname
@@ -79,12 +80,12 @@ class DetectBond(Detect):
 
     def readatombondtype(self, item):
         """Read bond orders of atoms.
-        
+
         Parameters
         ----------
         item : tuple
             (step, lines), _
-        
+
         Returns
         -------
         dict
@@ -170,12 +171,12 @@ class DetectDump(Detect):
 
     def readatombondtype(self, item):
         """Read bond orders of atoms.
-        
+
         Parameters
         ----------
         item : tuple
             (step, lines), _
-        
+
         Returns
         -------
         dict

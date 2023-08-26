@@ -596,12 +596,12 @@ class DatasetBuilder:
 
     def lineiter(self, detector):
         """Iterate over file(s).
-        
+
         Parameters
         ----------
         detector : mddatasetbuilder.detect.Detect
             File detector
-        
+
         Yields
         ------
         str
@@ -621,7 +621,7 @@ class DatasetBuilder:
 
     def erroriter(self):
         """Iterate over the model deviation file.
-        
+
         Yields
         ------
         str
