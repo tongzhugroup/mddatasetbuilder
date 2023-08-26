@@ -3,12 +3,15 @@
 
 import os
 
+from setuptools import Extension, setup
 from wheel.bdist_wheel import bdist_wheel
-from setuptools import setup, Extension
 
 
 class bdist_wheel_abi3(bdist_wheel):
+    """Build the distributed wheel for abi3."""
+
     def get_tag(self):
+        """Get the wheel tag."""
         python, abi, plat = super().get_tag()
 
         if python.startswith("cp"):

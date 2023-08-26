@@ -6,9 +6,9 @@ import os
 import random
 from multiprocessing import Pool
 
-from tqdm.auto import tqdm
 import dpdata
 import numpy as np
+from tqdm.auto import tqdm
 
 
 class PrepareDeePMD:

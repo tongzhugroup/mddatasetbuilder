@@ -1,3 +1,4 @@
+"""Test detecting bonds."""
 import numpy as np
 from ase import Atoms
 
@@ -5,6 +6,7 @@ from mddatasetbuilder.detect import DetectDump
 
 
 def test_bond_pbc():
+    """Test detecting bonds under PBC condition."""
     atoms = Atoms(
         "O2",
         positions=[[0.0, 0.0, 0.0], [19.0, 19.0, 19.0]],
@@ -18,6 +20,7 @@ def test_bond_pbc():
 
 
 def test_bond_nopbc():
+    """Test detecting bonds under non-PBC condition."""
     atoms = Atoms(
         "O2",
         positions=[[0.0, 0.0, 0.0], [19.0, 19.0, 19.0]],

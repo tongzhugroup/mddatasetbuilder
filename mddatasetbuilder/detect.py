@@ -1,16 +1,19 @@
 """Detect from trajectory."""
 import pickle
 from abc import ABCMeta, abstractmethod
-from enum import Enum, auto
 from collections import defaultdict
+from enum import Enum, auto
 
-from openbabel import openbabel
 import numpy as np
 from ase import Atom, Atoms
+from openbabel import openbabel
+
 from .dps import dps as connectmolecule
 
 
 class Detect(metaclass=ABCMeta):
+    """Detect structures from file(s)."""
+
     def __init__(self, filename, atomname, pbc, errorlimit=None, errorfilename=None):
         self.filename = filename
         self.atomname = atomname
@@ -25,12 +28,12 @@ class Detect(metaclass=ABCMeta):
 
     @abstractmethod
     def readatombondtype(self, item):
-        """This function reads bond types of atoms such as C1111."""
+        """Read bond types of atoms such as C1111."""
         pass
 
     @abstractmethod
     def readmolecule(self, lines):
-        """This function reads molecules."""
+        """Read molecules."""
         pass
 
     @staticmethod
@@ -46,7 +49,7 @@ class Detect(metaclass=ABCMeta):
 
 
 class DetectBond(Detect):
-    """LAMMPS bond file."""
+    """Detect from the LAMMPS bond file."""
 
     def _readN(self):
         """Read bondfile N, which should be at very beginning."""
@@ -76,6 +79,20 @@ class DetectBond(Detect):
         return steplinenum
 
     def readatombondtype(self, item):
+        """Read bond orders of atoms.
+
+        Parameters
+        ----------
+        item : tuple
+            (step, lines), _
+
+        Returns
+        -------
+        dict
+            dict of bond orders
+        int
+            the step index
+        """
         # copy from reacnetgenerator on 2018-12-15
         (step, lines), _ = item
         d = defaultdict(list)
@@ -84,10 +101,8 @@ class DetectBond(Detect):
                 if line[0] != "#":
                     s = line.split()
                     atombond = sorted(
-                        map(
-                            lambda x: max(1, round(float(x))),
-                            s[4 + int(s[2]) : 4 + 2 * int(s[2])],
-                        )
+                        max(1, round(float(x)))
+                        for x in s[4 + int(s[2]) : 4 + 2 * int(s[2])]
                     )
                     d[pickle.dumps((self.atomnames[int(s[0]) - 1], atombond))].append(
                         int(s[0])
@@ -95,7 +110,7 @@ class DetectBond(Detect):
         return d, step
 
     def readmolecule(self, lines):
-        """Returns molecules from lines.
+        """Return molecules from lines.
 
         Parameters
         ----------
@@ -113,14 +128,14 @@ class DetectBond(Detect):
             if line:
                 if not line.startswith("#"):
                     s = line.split()
-                    bond[int(s[0]) - 1] = list(
-                        map(lambda x: int(x) - 1, s[3 : 3 + int(s[2])])
-                    )
+                    bond[int(s[0]) - 1] = [int(x) - 1 for x in s[3 : 3 + int(s[2])]]
         molecules = connectmolecule(bond)
         return molecules
 
 
 class DetectDump(Detect):
+    """Detect from the dump file."""
+
     def _readN(self):
         # copy from reacnetgenerator on 2018-12-15
         iscompleted = False
@@ -157,6 +172,20 @@ class DetectDump(Detect):
         return steplinenum
 
     def readatombondtype(self, item):
+        """Read bond orders of atoms.
+
+        Parameters
+        ----------
+        item : tuple
+            (step, lines), _
+
+        Returns
+        -------
+        dict
+            dict of bond orders
+        int
+            the step index
+        """
         (step, lines), needlerror = item
         if needlerror:
             trajline, errorline = lines
@@ -173,7 +202,7 @@ class DetectDump(Detect):
         return d, step
 
     def readmolecule(self, lines):
-        """Returns molecules from lines.
+        """Return molecules from lines.
 
         Parameters
         ----------
