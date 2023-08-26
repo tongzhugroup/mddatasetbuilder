@@ -49,7 +49,7 @@ class Detect(metaclass=ABCMeta):
 
 
 class DetectBond(Detect):
-    """LAMMPS bond file."""
+    """Detect from the LAMMPS bond file."""
 
     def _readN(self):
         """Read bondfile N, which should be at very beginning."""
@@ -110,7 +110,7 @@ class DetectBond(Detect):
         return d, step
 
     def readmolecule(self, lines):
-        """Returns molecules from lines.
+        """Return molecules from lines.
 
         Parameters
         ----------
@@ -134,6 +134,7 @@ class DetectBond(Detect):
 
 
 class DetectDump(Detect):
+    """Detect from the dump file."""
     def _readN(self):
         # copy from reacnetgenerator on 2018-12-15
         iscompleted = False
