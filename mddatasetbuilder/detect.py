@@ -135,6 +135,7 @@ class DetectBond(Detect):
 
 class DetectDump(Detect):
     """Detect from the dump file."""
+
     def _readN(self):
         # copy from reacnetgenerator on 2018-12-15
         iscompleted = False
