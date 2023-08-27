@@ -11,10 +11,6 @@ MDDatasetBuilder is a script to construct reference datasets for the training of
 
 Complex reaction processes in combustion unraveled by neural network-based molecular dynamics simulation, Nature Communications, **11**, 5713 (2020), DOI: [10.1038/s41467-020-19497-z](https://doi.org/10.1038/s41467-020-19497-z)
 
-**Author**: Jinzhe Zeng
-
-**Email**: jzzeng@stu.ecnu.edu.cn
-
 ## Installation
 
 MDDatasetBuilder can be installed with pip:
