@@ -358,7 +358,7 @@ class DatasetBuilder:
         min_max_scaler = preprocessing.MinMaxScaler()
         X = np.array(min_max_scaler.fit_transform(X))
         clus = MiniBatchKMeans(
-            n_clusters=n_clusters, init_size=(min(3 * n_clusters, len(X)))
+            n_clusters=n_clusters, init_size=(min(3 * n_clusters, len(X))), n_init=3
         )
         labels = clus.fit_predict(X)
         choosedidx = []
