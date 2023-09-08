@@ -616,8 +616,7 @@ class DatasetBuilder:
                     None,
                     self.stepinterval,
                 )
-                for line in it:
-                    yield line
+                yield from it
 
     def erroriter(self):
         """Iterate over the model deviation file.
@@ -631,8 +630,7 @@ class DatasetBuilder:
         for fn in fns:
             with open(fn) as f:
                 it = itertools.islice(f, 1, None)
-                for line in it:
-                    yield line
+                yield from it
 
 
 def _commandline():
