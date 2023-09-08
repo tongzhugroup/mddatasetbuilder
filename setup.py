@@ -32,6 +32,7 @@ if __name__ == "__main__":
                 sources=["mddatasetbuilder/dps.pyx", "mddatasetbuilder/c_stack.cpp"],
                 language="c++",
                 define_macros=define_macros,
+                py_limited_api=True,
             ),
         ],
         cmdclass={"bdist_wheel": bdist_wheel_abi3},
