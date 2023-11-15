@@ -125,7 +125,7 @@ class DatasetBuilder:
         self.clusteratom = clusteratom if clusteratom else atomname
         self.atombondtype = []
         self.stepinterval = stepinterval
-        self.nproc = nproc if nproc else cpu_count()
+        self.nproc = nproc if nproc else len(os.sched_getaffinity(0))
         self.cutoff = cutoff
         self.n_clusters = n_clusters
         self.n_each = n_each
