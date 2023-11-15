@@ -21,7 +21,6 @@ import pickle
 import tempfile
 import time
 from collections import Counter, defaultdict
-from multiprocessing import cpu_count
 
 import numpy as np
 from ase.data import atomic_numbers
