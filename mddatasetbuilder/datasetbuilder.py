@@ -124,7 +124,14 @@ class DatasetBuilder:
         self.clusteratom = clusteratom if clusteratom else atomname
         self.atombondtype = []
         self.stepinterval = stepinterval
-        self.nproc = nproc if nproc else len(os.sched_getaffinity(0))
+        if nproc:
+            self.nproc = nproc
+        else:
+            try:
+                self.nproc = len(os.sched_getaffinity(0))
+            except AttributeError:
+                # macos and windows
+                self.nproc = os.cpu_count()
         self.cutoff = cutoff
         self.n_clusters = n_clusters
         self.n_each = n_each
