@@ -16,7 +16,7 @@ repos:
     -   id: check-toml
 # Python
 -   repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.1.3
+    rev: v0.1.14
     hooks:
     - id: ruff
       args: ["--fix"]
@@ -29,12 +29,12 @@ repos:
       args: ["--write"]
 # C++
 -   repo: https://github.com/pre-commit/mirrors-clang-format
-    rev: v17.0.3
+    rev: v17.0.6
     hooks:
     -   id: clang-format
 # Cython
 -   repo: https://github.com/MarcoGorelli/cython-lint
-    rev: v0.15.0
+    rev: v0.16.0
     hooks:
     -   id: cython-lint
     -   id: double-quote-cython-strings
