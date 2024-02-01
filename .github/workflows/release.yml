@@ -43,7 +43,7 @@ jobs:
       - run: pip install pipx
         if: matrix.os == 'macos-14'
       - name: Build wheels
-        uses: pypa/cibuildwheel@v2.16
+        uses: njzjz/cibuildwheel@a78facb861c2169ad7b47a4aa1b1dae0d1c75d3a
         env:
           CIBW_ARCHS: all
           CIBW_BUILD: cp${{ matrix.python }}-${{ matrix.platform_id }}
