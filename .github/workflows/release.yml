@@ -27,23 +27,14 @@ jobs:
           - os: macos-14
             python: 38
             platform_id: macosx_universal2
-          - os: macos-14
-            python: 39
-            platform_id: macosx_universal2
           # win-64
           - os: windows-2019
             python: 37
             platform_id: win_amd64
     steps:
       - uses: actions/checkout@v3
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.12'
-        if: matrix.os == 'macos-14'
-      - run: pip install pipx
-        if: matrix.os == 'macos-14'
       - name: Build wheels
-        uses: njzjz/cibuildwheel@a78facb861c2169ad7b47a4aa1b1dae0d1c75d3a
+        uses: pypa/cibuildwheel@v2.17
         env:
           CIBW_ARCHS: all
           CIBW_BUILD: cp${{ matrix.python }}-${{ matrix.platform_id }}
