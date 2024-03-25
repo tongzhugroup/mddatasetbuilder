@@ -1,6 +1,5 @@
 """Use 'pip install .' to install mddatasetbuilder."""
 
-
 import os
 
 from setuptools import Extension, setup

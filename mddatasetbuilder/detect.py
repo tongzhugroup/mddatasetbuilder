@@ -1,4 +1,5 @@
 """Detect from trajectory."""
+
 import pickle
 from abc import ABCMeta, abstractmethod
 from collections import defaultdict
