@@ -20,10 +20,7 @@ jobs:
           - os: ubuntu-latest
             python: 37
             platform_id: manylinux_x86_64
-          # macos-x86-64
-          - os: macos-13
-            python: 37
-            platform_id: macosx_x86_64
+          # macosx_universal2
           - os: macos-14
             python: 38
             platform_id: macosx_universal2
