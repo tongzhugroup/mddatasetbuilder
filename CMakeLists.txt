@@ -3,7 +3,7 @@ project(${SKBUILD_PROJECT_NAME} LANGUAGES CXX)
 
 find_package(
   Python
-  COMPONENTS Interpreter Development.Module
+  COMPONENTS Interpreter Development.SABIModule
   REQUIRED)
 
 add_custom_command(
@@ -17,12 +17,11 @@ add_custom_command(
   VERBATIM)
 
 python_add_library(
-  dps MODULE ${CMAKE_CURRENT_BINARY_DIR}/dps.cpp
+  dps MODULE USE_SABI 3.7 ${CMAKE_CURRENT_BINARY_DIR}/dps.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/mddatasetbuilder/c_stack.cpp WITH_SOABI)
 target_include_directories(dps
                            PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/mddatasetbuilder)
-target_compile_definitions(dps PRIVATE CYTHON_LIMITED_API=1
-                                       Py_LIMITED_API=0x03070000)
+target_compile_definitions(dps PRIVATE CYTHON_LIMITED_API=1)
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
   target_compile_definitions(dps PRIVATE CYTHON_TRACE=1 CYTHON_TRACE_NOGIL=1)
 endif()
