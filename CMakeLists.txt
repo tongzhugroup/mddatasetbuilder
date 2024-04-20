@@ -27,4 +27,4 @@ if(CMAKE_BUILD_TYPE STREQUAL "Debug")
   target_compile_definitions(dps PRIVATE CYTHON_TRACE=1 CYTHON_TRACE_NOGIL=1)
 endif()
 
-install(TARGETS dps DESTINATION .)
+install(TARGETS dps DESTINATION mddatasetbuilder/)
