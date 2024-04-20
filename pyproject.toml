@@ -65,6 +65,7 @@ minimum-version = "0.9"
 wheel.py-api = "cp37"
 metadata.version.provider = "scikit_build_core.metadata.setuptools_scm"
 sdist.include = ["mddatasetbuilder/_version.py"]
+cmake.version = ">=3.26"
 
 [tool.setuptools_scm]
 write_to = "mddatasetbuilder/_version.py"
