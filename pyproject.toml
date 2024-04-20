@@ -1,6 +1,6 @@
 [build-system]
-requires = ["setuptools>=61", "setuptools_scm[toml]>=7", "cython>=3.0.1", "wheel"]
-build-backend = "setuptools.build_meta"
+requires = ["scikit-build-core>=0.9.0", "cython>=3.0.1"]
+build-backend = "scikit-build-core.build"
 
 [project]
 name = "mddatasetbuilder"
@@ -43,7 +43,7 @@ homepage = "https://github.com/tongzhugroup/mddatasetbuilder"
 documentation = "https://mddatasetbuilder.njzjz.win/"
 repository = "https://github.com/tongzhugroup/mddatasetbuilder"
 
-[project.entry-points.console_scripts]
+[project.scripts]
 datasetbuilder = "mddatasetbuilder.datasetbuilder:_commandline"
 qmcalc = "mddatasetbuilder.qmcalc:_commandline"
 preparedeepmd = "mddatasetbuilder.deepmd:_commandline"
@@ -57,8 +57,11 @@ test = [
     'fakegaussian>=0.0.3',
 ]
 
-[tool.setuptools.packages.find]
-include = ["mddatasetbuilder*"]
+[tool.scikit-build]
+minimum-version = "0.9"
+wheel.py-api = "cp37"
+metadata.version.provider = "scikit_build_core.metadata.setuptools_scm"
+sdist.include = ["src/package/_version.py"]
 
 [tool.setuptools_scm]
 write_to = "mddatasetbuilder/_version.py"
