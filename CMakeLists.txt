@@ -7,13 +7,14 @@ find_package(
   REQUIRED)
 
 add_custom_command(
-OUTPUT dps.cpp
-COMMENT
+  OUTPUT dps.cpp
+  COMMENT
     "Making ${CMAKE_CURRENT_BINARY_DIR}/dps.cpp from ${CMAKE_CURRENT_SOURCE_DIR}/mddatasetbuilder/dps.pyx"
-COMMAND Python::Interpreter -m cython
-        "${CMAKE_CURRENT_SOURCE_DIR}/mddatasetbuilder/dps.pyx" --output-file dps.cpp
-DEPENDS mddatasetbuilder/dps.pyx
-VERBATIM)
+  COMMAND
+    Python::Interpreter -m cython
+    "${CMAKE_CURRENT_SOURCE_DIR}/mddatasetbuilder/dps.pyx" --output-file dps.cpp
+  DEPENDS mddatasetbuilder/dps.pyx
+  VERBATIM)
 
 python_add_library(dps MODULE ${CMAKE_CURRENT_BINARY_DIR}/dps.cpp
                    ${CMAKE_CURRENT_BINARY_DIR}/c_stack.cpp WITH_SOABI)
