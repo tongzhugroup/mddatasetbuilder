@@ -16,8 +16,9 @@ add_custom_command(
   DEPENDS mddatasetbuilder/dps.pyx
   VERBATIM)
 
-python_add_library(dps MODULE ${CMAKE_CURRENT_BINARY_DIR}/dps.cpp
-${CMAKE_CURRENT_SOURCE_DIR}/mddatasetbuilder/c_stack.cpp WITH_SOABI)
+python_add_library(
+  dps MODULE ${CMAKE_CURRENT_BINARY_DIR}/dps.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/mddatasetbuilder/c_stack.cpp WITH_SOABI)
 target_compile_definitions(dps PRIVATE CYTHON_LIMITED_API=1
                                        Py_LIMITED_API=0x03070000)
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
