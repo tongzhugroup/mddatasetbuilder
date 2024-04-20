@@ -17,8 +17,13 @@ add_custom_command(
   VERBATIM)
 
 python_add_library(
-  dps MODULE USE_SABI 3.7 ${CMAKE_CURRENT_BINARY_DIR}/dps.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/mddatasetbuilder/c_stack.cpp WITH_SOABI)
+  dps
+  MODULE
+  USE_SABI
+  3.7
+  ${CMAKE_CURRENT_BINARY_DIR}/dps.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/mddatasetbuilder/c_stack.cpp
+  WITH_SOABI)
 target_include_directories(dps
                            PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/mddatasetbuilder)
 target_compile_definitions(dps PRIVATE CYTHON_LIMITED_API=1)
