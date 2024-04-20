@@ -2,7 +2,6 @@
 requires = [
   "scikit-build-core>=0.9.0",
   "cython>=3.0.1",
-  "cython-cmake",
 ]
 build-backend = "scikit_build_core.build"
 

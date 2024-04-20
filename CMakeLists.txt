@@ -6,12 +6,16 @@ find_package(
   COMPONENTS Interpreter Development.Module
   REQUIRED)
 
-find_package(Cython REQUIRED)
+add_custom_command(
+OUTPUT dps.cpp
+COMMENT
+    "Making ${CMAKE_CURRENT_BINARY_DIR}/dps.cpp from ${CMAKE_CURRENT_SOURCE_DIR}/mddatasetbuilder/dps.pyx"
+COMMAND Python::Interpreter -m cython
+        "${CMAKE_CURRENT_SOURCE_DIR}/mddatasetbuilder/dps.pyx" --output-file dps.cpp
+DEPENDS mddatasetbuilder/dps.pyx
+VERBATIM)
 
-cython_compile_pyx(${CMAKE_CURRENT_BINARY_DIR}/dps.pyx OUTPUT_VAR
-                   _dps_source_files)
-
-python_add_library(dps MODULE ${_dps_source_files}
+python_add_library(dps MODULE ${CMAKE_CURRENT_BINARY_DIR}/dps.cpp
                    ${CMAKE_CURRENT_BINARY_DIR}/c_stack.cpp WITH_SOABI)
 target_compile_definitions(dps PRIVATE CYTHON_LIMITED_API=1
                                        Py_LIMITED_API=0x03070000)
