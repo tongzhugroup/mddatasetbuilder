@@ -22,7 +22,7 @@ jobs:
             platform_id: manylinux_x86_64
           # macosx_universal2
           - os: macos-14
-            python: 38
+            python: 39
             platform_id: macosx_universal2
           # win-64
           - os: windows-2019
