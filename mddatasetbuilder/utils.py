@@ -1,4 +1,5 @@
 """Utils."""
+
 import itertools
 import pickle
 from multiprocessing import Pool, Semaphore
