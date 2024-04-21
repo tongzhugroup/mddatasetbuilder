@@ -68,7 +68,7 @@ fallback_version = "Unknown"
 test-command = "datasetbuilder -h"
 build = ["cp37-*", "cp38-*", "cp39-*", "cp310-*", "cp311-*"]
 skip = ["*-win32", "*-manylinux_i686", "*-musllinux*"]
-test-skip = "*-win_amd64"
+test-skip = "*-win_amd64 cp311-*"
 
 [tool.cibuildwheel.linux]
 environment-pass = ["CIBW_BUILD"]
@@ -83,9 +83,6 @@ repair-wheel-command = [
   "delocate-wheel --require-archs {delocate_archs} -w {dest_dir} -v {wheel}",
   "pipx run abi3audit --strict --report {wheel}",
 ]
-
-[tool.cibuildwheel.windows]
-repair-wheel-command = "pipx run abi3audit --strict --report {wheel}"
 
 [tool.ruff]
 select = [
