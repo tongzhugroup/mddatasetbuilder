@@ -18,7 +18,7 @@ jobs:
         include:
           # linux-64
           - os: ubuntu-latest
-            python: 37
+            python: 38
             platform_id: manylinux_x86_64
           # macosx_universal2
           - os: macos-14
@@ -26,7 +26,7 @@ jobs:
             platform_id: macosx_universal2
           # win-64
           - os: windows-2019
-            python: 37
+            python: 38
             platform_id: win_amd64
     steps:
       - uses: actions/checkout@v4
