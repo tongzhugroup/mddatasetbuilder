@@ -4,6 +4,7 @@ import pickle
 from abc import ABCMeta, abstractmethod
 from collections import defaultdict
 from enum import Enum, auto
+from typing import List, Optional, Tuple, Union
 
 import numpy as np
 from ase import Atom, Atoms
@@ -24,16 +25,16 @@ class Detect(metaclass=ABCMeta):
         self.steplinenum = self._readN()
 
     @abstractmethod
-    def _readN(self):
+    def _readN(self) -> int:
         pass
 
     @abstractmethod
-    def readatombondtype(self, item):
+    def readatombondtype(self, item) -> Tuple[dict, int]:
         """Read bond types of atoms such as C1111."""
         pass
 
     @abstractmethod
-    def readmolecule(self, lines):
+    def readmolecule(self, lines) -> Tuple[List[List[int]], Optional[Atoms]]:
         """Read molecules."""
         pass
 
@@ -54,6 +55,10 @@ class DetectBond(Detect):
 
     def _readN(self):
         """Read bondfile N, which should be at very beginning."""
+        N = None
+        atomtype = None
+        stepaindex = None
+        stepbindex = None
         # copy from reacnetgenerator on 2018-12-15
         with open(
             self.filename if isinstance(self.filename, str) else self.filename[0]
@@ -72,7 +77,10 @@ class DetectBond(Detect):
                         atomtype = np.zeros(N, dtype=int)
                 else:
                     s = line.split()
+                    assert atomtype is not None
                     atomtype[int(s[0]) - 1] = int(s[1])
+        if stepaindex is None or stepbindex is None or N is None or atomtype is None:
+            raise RuntimeError("The bond file is not completed")
         steplinenum = stepbindex - stepaindex
         self._N = N
         self.atomtype = atomtype
@@ -110,7 +118,7 @@ class DetectBond(Detect):
                     )
         return d, step
 
-    def readmolecule(self, lines):
+    def readmolecule(self, lines) -> Tuple[List[List[int]], Optional[Atoms]]:
         """Return molecules from lines.
 
         Parameters
@@ -122,16 +130,18 @@ class DetectBond(Detect):
         -------
         molecules: list
             Indexes of atoms in molecules.
+        None
+            None
         """
         # copy from reacnetgenerator on 2018-12-15
-        bond = [None] * self._N
+        bond: List[Optional[List[int]]] = [None] * self._N
         for line in lines:
             if line:
                 if not line.startswith("#"):
                     s = line.split()
                     bond[int(s[0]) - 1] = [int(x) - 1 for x in s[3 : 3 + int(s[2])]]
         molecules = connectmolecule(bond)
-        return molecules
+        return molecules, None
 
 
 class DetectDump(Detect):
@@ -140,9 +150,14 @@ class DetectDump(Detect):
     def _readN(self):
         # copy from reacnetgenerator on 2018-12-15
         iscompleted = False
+        N = None
+        atomtype = None
+        stepaindex = None
+        stepbindex = None
         with open(
             self.filename if isinstance(self.filename, str) else self.filename[0]
         ) as f:
+            linecontent = None
             for index, line in enumerate(f):
                 if line.startswith("ITEM:"):
                     linecontent = self.LineType.linecontent(line)
@@ -154,7 +169,9 @@ class DetectDump(Detect):
                         self.yidx = keys.index("y") - 2
                         self.zidx = keys.index("z") - 2
                 else:
-                    if linecontent == self.LineType.NUMBER:
+                    if linecontent is None:
+                        raise RuntimeError("No ITEM: in the dump file")
+                    elif linecontent == self.LineType.NUMBER:
                         if iscompleted:
                             stepbindex = index
                             break
@@ -165,7 +182,10 @@ class DetectDump(Detect):
                         atomtype = np.zeros(N, dtype=int)
                     elif linecontent == self.LineType.ATOMS:
                         s = line.split()
+                        assert atomtype is not None
                         atomtype[int(s[self.id_idx]) - 1] = int(s[self.tidx])
+        if stepaindex is None or stepbindex is None or N is None or atomtype is None:
+            raise RuntimeError("The dump file is not completed")
         steplinenum = stepbindex - stepaindex
         self._N = N
         self.atomtype = atomtype
@@ -188,21 +208,21 @@ class DetectDump(Detect):
             the step index
         """
         (step, lines), needlerror = item
-        if needlerror:
-            trajline, errorline = lines
-            lerror = np.fromstring(errorline, dtype=float, sep=" ")[7:]
+        lerror: Optional[Union[np.ndarray, List[float]]] = None
         d = defaultdict(list)
         step_atoms, ids = self.readcrd(lines)
         if needlerror:
+            trajline, errorline = lines
+            lerror = np.fromstring(errorline, dtype=float, sep=" ")[7:]
             lerror = [x for (y, x) in sorted(zip(ids, lerror))]
         level = self._crd2bond(step_atoms, readlevel=True)
         for i, (n, l) in enumerate(zip(self.atomnames, level)):
-            if not needlerror or lerror[i] > self.errorlimit:
+            if lerror is None or (self.errorlimit is not None and lerror[i] > self.errorlimit):
                 # Note that atom id starts from 1
                 d[pickle.dumps((n, sorted(l)))].append(i + 1)
         return d, step
 
-    def readmolecule(self, lines):
+    def readmolecule(self, lines) -> Tuple[List[List[int]], Optional[Atoms]]:
         """Return molecules from lines.
 
         Parameters
@@ -250,11 +270,11 @@ class DetectDump(Detect):
             mol.CloneData(uc)
             mol.SetPeriodicMol()
         mol.ConnectTheDots()
-        if not readlevel:
-            bond = [[] for i in range(atomnumber)]
-        else:
+        # when readlevel is False, bond is used to store connected atoms
+        # otherwise, bondlevel is used to store bond orders
+        bond = [[] for i in range(atomnumber)]
+        if readlevel:
             mol.PerceiveBondOrders()
-            bondlevel = [[] for i in range(atomnumber)]
         mol.EndModify()
         for b in openbabel.OBMolBondIter(mol):
             s1 = b.GetBeginAtom().GetId()
@@ -264,23 +284,26 @@ class DetectDump(Detect):
                 bond[s2].append(s1)
             else:
                 level = b.GetBondOrder()
-                bondlevel[s1].append(level)
-                bondlevel[s2].append(level)
-        return bondlevel if readlevel else bond
+                bond[s1].append(level)
+                bond[s2].append(level)
+        return bond
 
-    def readcrd(self, item):
+    def readcrd(self, item) -> tuple[Atoms, List[int]]:
         """Only this function can read coordinates."""
         lines = item
         # box information
         ss = []
         step_atoms = []
         ids = []
+        linecontent = None
         for line in lines:
             if line:
                 if line.startswith("ITEM:"):
                     linecontent = self.LineType.linecontent(line)
                 else:
-                    if linecontent == self.LineType.ATOMS:
+                    if linecontent is None:
+                        raise RuntimeError("No ITEM: in the dump file")
+                    elif linecontent == self.LineType.ATOMS:
                         s = line.split()
                         ids.append(int(s[self.id_idx]))
                         step_atoms.append(
@@ -314,8 +337,8 @@ class DetectDump(Detect):
             [[xhi - xlo, 0.0, 0.0], [xy, yhi - ylo, 0.0], [xz, yz, zhi - zlo]]
         )
         # sort by ID
-        step_atoms = [x for (y, x) in sorted(zip(ids, step_atoms))]
-        step_atoms = Atoms(step_atoms, cell=boxsize, pbc=self.pbc)
+        step_atoms_ = [x for (y, x) in sorted(zip(ids, step_atoms))]
+        step_atoms = Atoms(step_atoms_, cell=boxsize, pbc=self.pbc)
         return step_atoms, ids
 
     class LineType(Enum):
