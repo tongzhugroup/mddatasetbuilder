@@ -30,6 +30,7 @@ def _commandline():
         "--ncpus",
         help="Number of CPU cores used, if not set, all CPU cores are used",
         default=None,
+        type=int,
     )
     args = parser.parse_args()
     qmcalc(gjfdir=args.dir, command=args.command)
