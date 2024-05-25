@@ -10,7 +10,7 @@ import numpy as np
 from ase import Atom, Atoms
 from openbabel import openbabel
 
-from .dps import dps as connectmolecule
+from mddatasetbuilder.dps import dps as connectmolecule
 
 
 class Detect(metaclass=ABCMeta):
