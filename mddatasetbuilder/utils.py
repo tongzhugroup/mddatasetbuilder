@@ -231,14 +231,14 @@ def run_mp(nproc, **arg):
         pool.join()
 
 
+T = TypeVar("T")
 
-T = TypeVar('T')
+
 @overload
-def must_be_list(obj: List[T]) -> List[T]:
-    ...
+def must_be_list(obj: List[T]) -> List[T]: ...
 @overload
-def must_be_list(obj: T) -> List[T]:
-    ...
+def must_be_list(obj: T) -> List[T]: ...
+
 
 def must_be_list(obj: Union[T, List[T]]) -> List[T]:
     """Convert a object to a list if the object is not a list.

@@ -217,7 +217,9 @@ class DetectDump(Detect):
             lerror = [x for (y, x) in sorted(zip(ids, lerror))]
         level = self._crd2bond(step_atoms, readlevel=True)
         for i, (n, l) in enumerate(zip(self.atomnames, level)):
-            if lerror is None or (self.errorlimit is not None and lerror[i] > self.errorlimit):
+            if lerror is None or (
+                self.errorlimit is not None and lerror[i] > self.errorlimit
+            ):
                 # Note that atom id starts from 1
                 d[pickle.dumps((n, sorted(l)))].append(i + 1)
         return d, step

@@ -21,9 +21,10 @@ import pickle
 import tempfile
 import time
 from collections import Counter, defaultdict
-from typing import TYPE_CHECKING, List, Optional
+from typing import List, Optional
 
 import numpy as np
+from ase.atoms import Atoms
 from ase.data import atomic_numbers
 from ase.io import write as write_xyz
 from sklearn import preprocessing
@@ -38,7 +39,6 @@ from .utils import (
     read_compressed_block,
     run_mp,
 )
-from ase.atoms import Atoms
 
 
 class DatasetBuilder:
@@ -99,7 +99,7 @@ class DatasetBuilder:
         nproc=None,
         pbc=True,
         fragment=False,
-        errorfilename: Optional[List[str]]=None,
+        errorfilename: Optional[List[str]] = None,
         errorlimit=0.0,
         atom_pref=False,
     ):
@@ -368,7 +368,9 @@ class DatasetBuilder:
         min_max_scaler = preprocessing.MinMaxScaler()
         X = np.array(min_max_scaler.fit_transform(X))
         clus = MiniBatchKMeans(
-            n_clusters=n_clusters, init_size=(min(3 * n_clusters, len(X))), n_init=3  # type: ignore
+            n_clusters=n_clusters,
+            init_size=(min(3 * n_clusters, len(X))),
+            n_init=3,  # type: ignore
         )
         labels = clus.fit_predict(X)
         choosedidx = []
