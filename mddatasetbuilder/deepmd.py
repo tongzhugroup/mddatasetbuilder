@@ -53,7 +53,7 @@ class PrepareDeePMD:
                 self._preparedeepmdforLOG, tqdm(logfiles, disable=None)
             ):
                 multi_systems.append(system)
-        multi_systems.to_deepmd_npy(self.deepmd_dir)
+        multi_systems.to_deepmd_npy(self.deepmd_dir)  # type: ignore
         for formula, system in multi_systems.systems.items():
             self.system_paths.append(os.path.join(self.deepmd_dir, formula))
             self.batch_size.append(

@@ -290,7 +290,7 @@ class DetectDump(Detect):
                 bond[s2].append(level)
         return bond
 
-    def readcrd(self, item) -> tuple[Atoms, List[int]]:
+    def readcrd(self, item) -> Tuple[Atoms, List[int]]:
         """Only this function can read coordinates."""
         lines = item
         # box information
