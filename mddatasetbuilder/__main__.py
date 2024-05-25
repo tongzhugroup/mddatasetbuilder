@@ -1,4 +1,5 @@
 """Module entry point."""
+
 from .datasetbuilder import _commandline
 
 if __name__ == "__main__":
