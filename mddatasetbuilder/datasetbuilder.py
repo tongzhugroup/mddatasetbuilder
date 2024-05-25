@@ -31,6 +31,7 @@ from sklearn import preprocessing
 from sklearn.cluster import MiniBatchKMeans
 
 from ._logger import logger
+from ._version import version as __version__
 from .detect import Detect, DetectDump
 from .utils import (
     bytestolist,
@@ -724,6 +725,11 @@ def _commandline():
         help="Model deviation lower threshold. Atoms whose model deviation is less than the threshold will not be collected.",
         type=float,
         default=0.0,
+    )
+    parser.add_argument(
+        "--version",
+        action="version",
+        version=f"MDDatasetBuilder {__version__}",
     )
     args = parser.parse_args()
     DatasetBuilder(
