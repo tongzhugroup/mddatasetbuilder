@@ -3,7 +3,7 @@
 import itertools
 import pickle
 from multiprocessing import Pool, Semaphore
-from typing import BinaryIO, Union
+from typing import BinaryIO, List, TypeVar, Union, overload
 
 import lz4.frame
 from tqdm.auto import tqdm
@@ -192,7 +192,7 @@ def bytestolist(x):
     object
         The decompressed object.
     """
-    return pickle.loads(decompress(x, isbytes=True))
+    return pickle.loads(decompress(x, isbytes=True))  # type: ignore
 
 
 def run_mp(nproc, **arg):
@@ -231,7 +231,16 @@ def run_mp(nproc, **arg):
         pool.join()
 
 
-def must_be_list(obj):
+T = TypeVar("T")
+
+
+@overload
+def must_be_list(obj: List[T]) -> List[T]: ...
+@overload
+def must_be_list(obj: T) -> List[T]: ...
+
+
+def must_be_list(obj: Union[T, List[T]]) -> List[T]:
     """Convert a object to a list if the object is not a list.
 
     Parameters
