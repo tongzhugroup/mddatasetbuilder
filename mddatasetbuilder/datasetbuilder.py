@@ -31,6 +31,7 @@ from sklearn import preprocessing
 from sklearn.cluster import MiniBatchKMeans
 
 from ._logger import logger
+from ._version import version as __version__
 from .detect import Detect, DetectDump
 from .utils import (
     bytestolist,
@@ -39,7 +40,6 @@ from .utils import (
     read_compressed_block,
     run_mp,
 )
-from ._version import version as __version__
 
 
 class DatasetBuilder:
