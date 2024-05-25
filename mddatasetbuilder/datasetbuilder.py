@@ -39,6 +39,7 @@ from .utils import (
     read_compressed_block,
     run_mp,
 )
+from ._version import version as __version__
 
 
 class DatasetBuilder:
@@ -724,6 +725,11 @@ def _commandline():
         help="Model deviation lower threshold. Atoms whose model deviation is less than the threshold will not be collected.",
         type=float,
         default=0.0,
+    )
+    parser.add_argument(
+        "--version",
+        action="version",
+        version=f"MDDatasetBuilder {__version__}",
     )
     args = parser.parse_args()
     DatasetBuilder(
