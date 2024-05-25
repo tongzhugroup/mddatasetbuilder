@@ -1,4 +1,5 @@
 """Test command line interface."""
+
 import subprocess as sp
 import sys
 
