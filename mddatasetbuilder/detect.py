@@ -4,7 +4,7 @@ import pickle
 from abc import ABCMeta, abstractmethod
 from collections import defaultdict
 from enum import Enum, auto
-from typing import List, Optional, Tuple, Union
+from typing import List, Optional, Tuple, Union, cast
 
 import numpy as np
 from ase import Atom, Atoms
@@ -140,7 +140,8 @@ class DetectBond(Detect):
                 if not line.startswith("#"):
                     s = line.split()
                     bond[int(s[0]) - 1] = [int(x) - 1 for x in s[3 : 3 + int(s[2])]]
-        molecules = connectmolecule(bond)
+        bond_ = cast(List[List[int]], bond)
+        molecules = connectmolecule(bond_)
         return molecules, None
 
 
