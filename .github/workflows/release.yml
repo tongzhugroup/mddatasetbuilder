@@ -30,6 +30,8 @@ jobs:
             platform_id: win_amd64
     steps:
       - uses: actions/checkout@v4
+      - name: Install uv
+        run: pipx install uv
       - name: Build wheels
         uses: henryiii/cibuildwheel@henryiii/feat/builduv
         env:
