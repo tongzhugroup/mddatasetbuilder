@@ -31,10 +31,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Build wheels
-        uses: pypa/cibuildwheel@v2.18
+        uses: henryiii/cibuildwheel@henryiii/feat/builduv
         env:
           CIBW_ARCHS: all
           CIBW_BUILD: cp${{ matrix.python }}-${{ matrix.platform_id }}
+          CIBW_BUILD_FRONTEND: 'build[uv]'
       - uses: actions/upload-artifact@v4
         with:
           name: cibw-wheels-cp${{ matrix.python }}-${{ matrix.platform_id }}-${{ strategy.job-index }}
