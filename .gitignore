@@ -108,3 +108,4 @@ testfiles*/
 dps.cpp
 
 _version.py
+.uv/
