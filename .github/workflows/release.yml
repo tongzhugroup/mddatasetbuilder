@@ -34,7 +34,7 @@ jobs:
         run: curl -LsSf https://astral.sh/uv/install.sh | sh
         if: runner.os != 'Linux'
       - name: Build wheels
-        uses: henryiii/cibuildwheel@henryiii/feat/builduv
+        uses: pypa/cibuildwheel@main
         env:
           CIBW_ARCHS: all
           CIBW_BUILD: cp${{ matrix.python }}-${{ matrix.platform_id }}
