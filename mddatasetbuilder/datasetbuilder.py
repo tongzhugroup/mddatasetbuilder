@@ -375,10 +375,11 @@ class DatasetBuilder:
         )
         labels = clus.fit_predict(X)
         choosedidx = []
+        rng = np.random.default_rng()
         for i in range(n_clusters):
             idx = np.where(labels == i)[0]
             if idx.size:
-                choosedidx.append(np.random.choice(idx, n_each))
+                choosedidx.append(rng.choice(idx, n_each))
         index = np.concatenate(choosedidx)
         return index
 
