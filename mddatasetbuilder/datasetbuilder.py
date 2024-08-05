@@ -344,7 +344,7 @@ class DatasetBuilder:
         with np.errstate(divide="ignore", invalid="ignore"):
             np.divide(top, r, top)
             np.fill_diagonal(top, diag)
-        top[top == np.Infinity] = 0
+        top[top == np.inf] = 0
         top[np.isnan(top)] = 0
         return np.linalg.eigh(top)[0]
 
