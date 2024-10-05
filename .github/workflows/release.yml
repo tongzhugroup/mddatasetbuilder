@@ -31,7 +31,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Install uv
-        run: curl -LsSf https://astral.sh/uv/install.sh | sh
+        uses: astral-sh/setup-uv@v3
+        with:
+          enable-cache: true
+          cache-dependency-glob: |
+            **/requirements*.txt
+            **/pyproject.toml
         if: runner.os != 'Linux'
       - name: Build wheels
         uses: pypa/cibuildwheel@v2.21
