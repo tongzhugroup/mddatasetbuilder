@@ -18,6 +18,6 @@ jobs:
         architecture: 'x64'
     - run: pip install tox tox-gh-actions tox-uv
     - run: tox
-    - uses: codecov/codecov-action@v4
+    - uses: codecov/codecov-action@v5
       env:
         CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
