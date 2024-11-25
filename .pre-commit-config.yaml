@@ -2,7 +2,7 @@
 # See https://pre-commit.com/hooks.html for more hooks
 repos:
 -   repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.6.0
+    rev: v5.0.0
     hooks:
     # there are many log files in tests
     # TODO: seperate py files and log files
@@ -16,7 +16,7 @@ repos:
     -   id: check-toml
 # Python
 -   repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.5.5
+    rev: v0.8.0
     hooks:
     - id: ruff
       args: ["--fix"]
@@ -29,12 +29,12 @@ repos:
       args: ["--write"]
 # C++
 -   repo: https://github.com/pre-commit/mirrors-clang-format
-    rev: v18.1.8
+    rev: v19.1.4
     hooks:
     -   id: clang-format
 # Cython
 -   repo: https://github.com/MarcoGorelli/cython-lint
-    rev: v0.16.2
+    rev: v0.16.6
     hooks:
     -   id: cython-lint
     -   id: double-quote-cython-strings
