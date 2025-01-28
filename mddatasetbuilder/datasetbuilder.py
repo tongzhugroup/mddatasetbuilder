@@ -179,7 +179,7 @@ class DatasetBuilder:
                 gc.collect()
                 timearray.append(time.time())
                 logger.info(
-                    f"Step {len(timearray)-1} Done! Time consumed (s): {timearray[-1]-timearray[-2]:.3f}"
+                    f"Step {len(timearray) - 1} Done! Time consumed (s): {timearray[-1] - timearray[-2]:.3f}"
                 )
 
     def _readtimestepsbond(self):
@@ -609,7 +609,7 @@ class DatasetBuilder:
         if typebytes in self.bondtyperestore:
             return self.bondtyperestore[typebytes]
         typetuple = pickle.loads(typebytes)
-        typestr = f"{typetuple[0]}{''.join(map(str,typetuple[1]))}"
+        typestr = f"{typetuple[0]}{''.join(map(str, typetuple[1]))}"
         self.bondtyperestore[typebytes] = typestr
         return typestr
 
