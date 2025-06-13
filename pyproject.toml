@@ -10,7 +10,7 @@ name = "mddatasetbuilder"
 dynamic = ["version"]
 description = "A script to generate molecular dynamics (MD) datasets for machine learning from given LAMMPS trajectories automatically."
 authors = [
-  {name = "Jinzhe Zeng", email = "jinzhe.zeng@rutgers.edu"},
+  {name = "Jinzhe Zeng", email = "jinzhe.zeng@ustc.edu.cn"},
 ]
 license = {file = "LICENSE"}
 classifiers = [
