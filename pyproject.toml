@@ -69,7 +69,7 @@ cmake.version = ">=3.26"
 
 [tool.setuptools_scm]
 write_to = "mddatasetbuilder/_version.py"
-fallback_version = "Unknown"
+fallback_version = "0.0.0"
 
 [tool.cibuildwheel]
 test-command = "datasetbuilder -h"
